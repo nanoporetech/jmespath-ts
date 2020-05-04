@@ -19,7 +19,7 @@
     "node": ">=10.0.0"
   },
   "scripts": {
-    "lint": "eslint '**/{src,test}/**/*.{js,ts}'",
+    "lint": "eslint --ignore-path .gitignore '**/{src,test}/**/*.{js,ts}'",
     "lint:fix": "npm run lint -- --fix",
     "prebuild": "rimraf dist",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
