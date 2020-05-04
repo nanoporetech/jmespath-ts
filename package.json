@@ -1,7 +1,7 @@
 {
   "name": "jqjs",
   "version": "0.0.0",
-  "description": "",
+  "description": "A jq expression thing",
   "keywords": [],
   "main": "dist/jqjs.umd.js",
   "module": "dist/jqjs.es5.js",
