@@ -1,0 +1,681 @@
+import { TreeInterpreter } from './TreeInterpreter';
+import {
+  Token,
+  JSONValue,
+  JSONObject,
+  FunctionTable,
+  InputArgument,
+  InputSignature,
+  RuntimeFunction,
+  FunctionSignature,
+  JSONArray,
+} from './typings';
+import { isObject } from './utils';
+
+const TYPE_NAME_TABLE: { [InputArgument: number]: string } = {
+  [InputArgument.TYPE_NUMBER]: 'number',
+  [InputArgument.TYPE_ANY]: 'any',
+  [InputArgument.TYPE_STRING]: 'string',
+  [InputArgument.TYPE_ARRAY]: 'array',
+  [InputArgument.TYPE_OBJECT]: 'object',
+  [InputArgument.TYPE_BOOLEAN]: 'boolean',
+  [InputArgument.TYPE_EXPREF]: 'expression',
+  [InputArgument.TYPE_NULL]: 'null',
+  [InputArgument.TYPE_ARRAY_NUMBER]: 'Array<number>',
+  [InputArgument.TYPE_ARRAY_STRING]: 'Array<string>',
+};
+
+export class Runtime {
+  _interpreter?: TreeInterpreter;
+
+  constructor(interpreter?: TreeInterpreter) {
+    this._interpreter = interpreter;
+  }
+
+  registerFunction(name: string, functionGenerator: (ctx: Runtime) => FunctionSignature): void {
+    if (name in this.functionTable) {
+      throw new Error(`Function already defined: ${name}()`);
+    }
+    this.functionTable[name] = functionGenerator(this);
+  }
+
+  callFunction(name: string, resolvedArgs: any): unknown {
+    const functionEntry = this.functionTable[name];
+    if (functionEntry === undefined) {
+      throw new Error(`Unknown function: ${name}()`);
+    }
+    this.validateArgs(name, resolvedArgs, functionEntry._signature);
+    return functionEntry._func.call(this, resolvedArgs);
+  }
+
+  private validateArgs(name: string, args: any[], signature: InputSignature[]): void {
+    let pluralized: boolean;
+    if (signature[signature.length - 1].variadic) {
+      if (args.length < signature.length) {
+        pluralized = signature.length > 1;
+        throw new Error(
+          `ArgumentError: ${name}() takes at least ${signature.length} argument${
+            (pluralized && 's') || ''
+          } but received ${args.length}`,
+        );
+      }
+    } else if (args.length !== signature.length) {
+      pluralized = signature.length > 1;
+      throw new Error(
+        `ArgumentError: ${name}() takes ${signature.length} argument${(pluralized && 's') || ''} but received ${
+          args.length
+        }`,
+      );
+    }
+    let currentSpec: InputArgument[];
+    let actualType: InputArgument;
+    let typeMatched: boolean;
+    for (let i = 0; i < signature.length; i += 1) {
+      typeMatched = false;
+      currentSpec = signature[i].types;
+      actualType = this.getTypeName(args[i]) as InputArgument;
+      let j: number;
+      for (j = 0; j < currentSpec.length; j += 1) {
+        if (actualType !== undefined && this.typeMatches(actualType, currentSpec[j], args[i])) {
+          typeMatched = true;
+          break;
+        }
+      }
+      if (!typeMatched) {
+        const expected = currentSpec
+          .map((typeIdentifier): string => {
+            return TYPE_NAME_TABLE[typeIdentifier];
+          })
+          .join(' | ');
+
+        throw new Error(
+          `TypeError: ${name}() expected argument ${i + 1} to be type (${expected}) but received type ${
+            TYPE_NAME_TABLE[actualType]
+          } instead.`,
+        );
+      }
+    }
+  }
+
+  private typeMatches(actual: InputArgument, expected: InputArgument, argValue: any[]): boolean {
+    if (expected === InputArgument.TYPE_ANY) {
+      return true;
+    }
+    if (
+      expected === InputArgument.TYPE_ARRAY_STRING ||
+      expected === InputArgument.TYPE_ARRAY_NUMBER ||
+      expected === InputArgument.TYPE_ARRAY
+    ) {
+      if (expected === InputArgument.TYPE_ARRAY) {
+        return actual === InputArgument.TYPE_ARRAY;
+      }
+      if (actual === InputArgument.TYPE_ARRAY) {
+        let subtype;
+        if (expected === InputArgument.TYPE_ARRAY_NUMBER) {
+          subtype = InputArgument.TYPE_NUMBER;
+        } else if (expected === InputArgument.TYPE_ARRAY_STRING) {
+          subtype = InputArgument.TYPE_STRING;
+        }
+        for (let i = 0; i < argValue.length; i += 1) {
+          const typeName = this.getTypeName(argValue[i]);
+          if (typeName !== undefined && subtype !== undefined && !this.typeMatches(typeName, subtype, argValue[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+    } else {
+      return actual === expected;
+    }
+    return false;
+  }
+  private getTypeName(obj: JSONValue): InputArgument | undefined {
+    switch (Object.prototype.toString.call(obj)) {
+      case '[object String]':
+        return InputArgument.TYPE_STRING;
+      case '[object Number]':
+        return InputArgument.TYPE_NUMBER;
+      case '[object Array]':
+        return InputArgument.TYPE_ARRAY;
+      case '[object Boolean]':
+        return InputArgument.TYPE_BOOLEAN;
+      case '[object Null]':
+        return InputArgument.TYPE_NULL;
+      case '[object Object]':
+        if ((obj as JSONObject).jmespathType === Token.TOK_EXPREF) {
+          return InputArgument.TYPE_EXPREF;
+        }
+        return InputArgument.TYPE_OBJECT;
+
+      default:
+        return;
+    }
+  }
+
+  createKeyFunction(exprefNode: any, allowedTypes: InputArgument[]) {
+    if (!this._interpreter) return;
+    const interpreter = this._interpreter;
+    const keyFunc = (x: any) => {
+      const current = interpreter.visit(exprefNode, x);
+      if (!allowedTypes.includes(this.getTypeName(current) as InputArgument)) {
+        const msg = `TypeError: expected one of (${allowedTypes.map(t => TYPE_NAME_TABLE[t]).join(' | ')}), received ${
+          TYPE_NAME_TABLE[this.getTypeName(current) as InputArgument]
+        }`;
+        throw new Error(msg);
+      }
+      return current;
+    };
+    return keyFunc;
+  }
+
+  private functionAbs: RuntimeFunction<number[], number> = ([inputValue]) => {
+    return Math.abs(inputValue);
+  };
+
+  private functionAvg: RuntimeFunction<number[][], number> = ([inputArray]) => {
+    let sum = 0;
+    for (let i = 0; i < inputArray.length; i += 1) {
+      sum += inputArray[i];
+    }
+    return sum / inputArray.length;
+  };
+
+  private functionCeil: RuntimeFunction<[number], number> = ([inputValue]) => {
+    return Math.ceil(inputValue);
+  };
+
+  private functionContains: RuntimeFunction<[string | any[], any], boolean> = resolvedArgs => {
+    const [searchable, searchValue] = resolvedArgs;
+    return searchable.includes(searchValue);
+  };
+
+  private functionEndsWith: RuntimeFunction<[string, string], boolean> = resolvedArgs => {
+    const [searchStr, suffix] = resolvedArgs;
+    return searchStr.includes(suffix, searchStr.length - suffix.length);
+  };
+
+  private functionFloor: RuntimeFunction<[number], number> = ([inputValue]) => {
+    return Math.floor(inputValue);
+  };
+
+  private functionJoin: RuntimeFunction<[string, string[]], string> = resolvedArgs => {
+    const [joinChar, listJoin] = resolvedArgs;
+    return listJoin.join(joinChar);
+  };
+
+  private functionKeys: RuntimeFunction<[JSONObject], string[]> = ([inputObject]) => {
+    return Object.keys(inputObject);
+  };
+
+  private functionLength: RuntimeFunction<[string | JSONArray | JSONObject], number> = ([inputValue]) => {
+    if (!isObject(inputValue)) {
+      return (inputValue as string | JSONArray).length;
+    }
+    return Object.keys(inputValue as JSONObject).length;
+  };
+
+  private functionMap = (resolvedArgs: any[]) => {
+    if (!this._interpreter) return [];
+    const mapped = [];
+    const interpreter = this._interpreter;
+    const exprefNode = resolvedArgs[0];
+    const elements = resolvedArgs[1];
+    for (let i = 0; i < elements.length; i += 1) {
+      mapped.push(interpreter.visit(exprefNode, elements[i]));
+    }
+    return mapped;
+  };
+
+  private functionMax: RuntimeFunction<[(string | number)[]], string | number | null> = ([inputValue]) => {
+    if (!inputValue.length) return null;
+
+    const typeName = this.getTypeName(inputValue[0]);
+    if (typeName === InputArgument.TYPE_NUMBER) {
+      return Math.max(...(inputValue as number[]));
+    }
+
+    const elements = inputValue as string[];
+    let maxElement = elements[0];
+    for (let i = 1; i < elements.length; i += 1) {
+      if (maxElement.localeCompare(elements[i]) < 0) {
+        maxElement = elements[i];
+      }
+    }
+    return maxElement;
+  };
+
+  private functionMaxBy = (resolvedArgs: any[]) => {
+    const exprefNode = resolvedArgs[1];
+    const resolvedArray = resolvedArgs[0];
+    const keyFunction = this.createKeyFunction(exprefNode, [InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING]);
+    let maxNumber = -Infinity;
+    let maxRecord;
+    let current;
+    for (let i = 0; i < resolvedArray.length; i += 1) {
+      current = keyFunction && keyFunction(resolvedArray[i]);
+      if (current > maxNumber) {
+        maxNumber = current;
+        maxRecord = resolvedArray[i];
+      }
+    }
+    return maxRecord;
+  };
+
+  private functionMerge: RuntimeFunction<JSONObject[], JSONObject> = resolvedArgs => {
+    let merged = {};
+    for (let i = 0; i < resolvedArgs.length; i += 1) {
+      const current = resolvedArgs[i];
+      merged = Object.assign(merged, current);
+      // for (const key in current) {
+      //   merged[key] = current[key];
+      // }
+    }
+    return merged;
+  };
+
+  private functionMin: RuntimeFunction<[(string | number)[]], string | number | null> = ([inputValue]) => {
+    if (!inputValue.length) return null;
+
+    const typeName = this.getTypeName(inputValue[0]);
+    if (typeName === InputArgument.TYPE_NUMBER) {
+      return Math.min(...(inputValue as number[]));
+    }
+
+    const elements = inputValue as string[];
+    let minElement = elements[0];
+    for (let i = 1; i < elements.length; i += 1) {
+      if (elements[i].localeCompare(minElement) < 0) {
+        minElement = elements[i];
+      }
+    }
+    return minElement;
+  };
+
+  private functionMinBy = (resolvedArgs: any[]) => {
+    const exprefNode = resolvedArgs[1];
+    const resolvedArray = resolvedArgs[0];
+    const keyFunction = this.createKeyFunction(exprefNode, [InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING]);
+    let minNumber = Infinity;
+    let minRecord;
+    let current;
+    for (let i = 0; i < resolvedArray.length; i += 1) {
+      current = keyFunction && keyFunction(resolvedArray[i]);
+      if (current < minNumber) {
+        minNumber = current;
+        minRecord = resolvedArray[i];
+      }
+    }
+    return minRecord;
+  };
+
+  private functionNotNull = (resolvedArgs: any[]) => {
+    for (let i = 0; i < resolvedArgs.length; i += 1) {
+      if (this.getTypeName(resolvedArgs[i]) !== InputArgument.TYPE_NULL) {
+        return resolvedArgs[i];
+      }
+    }
+    return null;
+  };
+
+  private functionReverse: RuntimeFunction<[string | JSONArray[]], string | JSONArray> = ([inputValue]) => {
+    const typeName = this.getTypeName(inputValue);
+    if (typeName === InputArgument.TYPE_STRING) {
+      const originalStr = inputValue as string;
+      let reversedStr = '';
+      for (let i = originalStr.length - 1; i >= 0; i -= 1) {
+        reversedStr += originalStr[i];
+      }
+      return reversedStr;
+    }
+    const reversedArray = (inputValue as JSONArray).slice(0);
+    reversedArray.reverse();
+    return reversedArray;
+  };
+
+  private functionSort: RuntimeFunction<[(string | number)[]], (string | number)[]> = ([inputValue]) => {
+    return [...inputValue].sort();
+  };
+
+  private functionSortBy = (resolvedArgs: any[]) => {
+    if (!this._interpreter) return [];
+    const sortedArray = resolvedArgs[0].slice(0);
+    if (sortedArray.length === 0) {
+      return sortedArray;
+    }
+    const interpreter = this._interpreter;
+    const exprefNode = resolvedArgs[1];
+    const requiredType = this.getTypeName(interpreter.visit(exprefNode, sortedArray[0]));
+    if (requiredType !== undefined && ![InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING].includes(requiredType)) {
+      throw new Error(`TypeError: unexpected type (${TYPE_NAME_TABLE[requiredType]})`);
+    }
+    const decorated = [];
+    for (let i = 0; i < sortedArray.length; i += 1) {
+      decorated.push([i, sortedArray[i]]);
+    }
+    decorated.sort((a, b) => {
+      const exprA = interpreter.visit(exprefNode, a[1]);
+      const exprB = interpreter.visit(exprefNode, b[1]);
+      if (this.getTypeName(exprA) !== requiredType) {
+        throw new Error(
+          `TypeError: expected (${TYPE_NAME_TABLE[requiredType as InputArgument]}), received ${
+            TYPE_NAME_TABLE[this.getTypeName(exprA) as InputArgument]
+          }`,
+        );
+      } else if (this.getTypeName(exprB) !== requiredType) {
+        throw new Error(`TypeError: expected ${requiredType}, received ${this.getTypeName(exprB)}`);
+      }
+      if (exprA > exprB) {
+        return 1;
+      }
+      if (exprA < exprB) {
+        return -1;
+      }
+      return a[0] - b[0];
+    });
+    for (let j = 0; j < decorated.length; j += 1) {
+      sortedArray[j] = decorated[j][1];
+    }
+    return sortedArray;
+  };
+
+  private functionStartsWith: RuntimeFunction<[string, string], boolean> = ([searchable, searchStr]) => {
+    return searchable.startsWith(searchStr);
+  };
+
+  private functionSum: RuntimeFunction<[number[]], number> = ([inputValue]) => {
+    return inputValue.reduce((x, y) => x + y, 0);
+  };
+
+  private functionToArray: RuntimeFunction<[JSONValue], JSONArray> = ([inputValue]) => {
+    if (this.getTypeName(inputValue) === InputArgument.TYPE_ARRAY) {
+      return inputValue as JSONArray;
+    }
+    return [inputValue];
+  };
+
+  private functionToNumber: RuntimeFunction<[JSONValue], number | null> = ([inputValue]) => {
+    const typeName = this.getTypeName(inputValue);
+    let convertedValue: number;
+    if (typeName === InputArgument.TYPE_NUMBER) {
+      return inputValue as number;
+    }
+    if (typeName === InputArgument.TYPE_STRING) {
+      convertedValue = +(inputValue as string);
+      if (!isNaN(convertedValue)) {
+        return convertedValue;
+      }
+    }
+    return null;
+  };
+
+  private functionToString: RuntimeFunction<[JSONValue], string> = ([inputValue]) => {
+    if (this.getTypeName(inputValue) === InputArgument.TYPE_STRING) {
+      return inputValue as string;
+    }
+    return JSON.stringify(inputValue);
+  };
+
+  private functionType: RuntimeFunction<[JSONValue], string | undefined> = ([inputValue]) => {
+    switch (this.getTypeName(inputValue)) {
+      case InputArgument.TYPE_NUMBER:
+        return 'number';
+      case InputArgument.TYPE_STRING:
+        return 'string';
+      case InputArgument.TYPE_ARRAY:
+        return 'array';
+      case InputArgument.TYPE_OBJECT:
+        return 'object';
+      case InputArgument.TYPE_BOOLEAN:
+        return 'boolean';
+      case InputArgument.TYPE_EXPREF:
+        return 'expref';
+      case InputArgument.TYPE_NULL:
+        return 'null';
+      default:
+        return;
+    }
+  };
+
+  private functionValues: RuntimeFunction<[JSONObject], JSONValue[]> = ([inputObject]) => {
+    return Object.values(inputObject);
+  };
+
+  /* eslint-disable @typescript-eslint/camelcase */
+  private functionTable: FunctionTable = {
+    abs: {
+      _func: this.functionAbs,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_NUMBER],
+        },
+      ],
+    },
+    avg: {
+      _func: this.functionAvg,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY_NUMBER],
+        },
+      ],
+    },
+    ceil: {
+      _func: this.functionCeil,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_NUMBER],
+        },
+      ],
+    },
+    contains: {
+      _func: this.functionContains,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING, InputArgument.TYPE_ARRAY],
+        },
+        {
+          types: [InputArgument.TYPE_ANY],
+        },
+      ],
+    },
+    ends_with: {
+      _func: this.functionEndsWith,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+      ],
+    },
+    floor: {
+      _func: this.functionFloor,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_NUMBER],
+        },
+      ],
+    },
+    join: {
+      _func: this.functionJoin,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+        {
+          types: [InputArgument.TYPE_ARRAY_STRING],
+        },
+      ],
+    },
+    keys: {
+      _func: this.functionKeys,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_OBJECT],
+        },
+      ],
+    },
+    length: {
+      _func: this.functionLength,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING, InputArgument.TYPE_ARRAY, InputArgument.TYPE_OBJECT],
+        },
+      ],
+    },
+    map: {
+      _func: this.functionMap,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_EXPREF],
+        },
+        {
+          types: [InputArgument.TYPE_ARRAY],
+        },
+      ],
+    },
+    max: {
+      _func: this.functionMax,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY_NUMBER, InputArgument.TYPE_ARRAY_STRING],
+        },
+      ],
+    },
+    max_by: {
+      _func: this.functionMaxBy,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY],
+        },
+        {
+          types: [InputArgument.TYPE_EXPREF],
+        },
+      ],
+    },
+    merge: {
+      _func: this.functionMerge,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_OBJECT],
+          variadic: true,
+        },
+      ],
+    },
+    min: {
+      _func: this.functionMin,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY_NUMBER, InputArgument.TYPE_ARRAY_STRING],
+        },
+      ],
+    },
+    min_by: {
+      _func: this.functionMinBy,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY],
+        },
+        {
+          types: [InputArgument.TYPE_EXPREF],
+        },
+      ],
+    },
+    not_null: {
+      _func: this.functionNotNull,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ANY],
+          variadic: true,
+        },
+      ],
+    },
+    reverse: {
+      _func: this.functionReverse,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING, InputArgument.TYPE_ARRAY],
+        },
+      ],
+    },
+    sort: {
+      _func: this.functionSort,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY_STRING, InputArgument.TYPE_ARRAY_NUMBER],
+        },
+      ],
+    },
+    sort_by: {
+      _func: this.functionSortBy,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY],
+        },
+        {
+          types: [InputArgument.TYPE_EXPREF],
+        },
+      ],
+    },
+    starts_with: {
+      _func: this.functionStartsWith,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+      ],
+    },
+    sum: {
+      _func: this.functionSum,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY_NUMBER],
+        },
+      ],
+    },
+    to_array: {
+      _func: this.functionToArray,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ANY],
+        },
+      ],
+    },
+    to_number: {
+      _func: this.functionToNumber,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ANY],
+        },
+      ],
+    },
+    to_string: {
+      _func: this.functionToString,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ANY],
+        },
+      ],
+    },
+    type: {
+      _func: this.functionType,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ANY],
+        },
+      ],
+    },
+    values: {
+      _func: this.functionValues,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_OBJECT],
+        },
+      ],
+    },
+  };
+  /* eslint-enable @typescript-eslint/camelcase */
+}
