@@ -9,7 +9,7 @@ import {
   Node,
   Token,
 } from './typings';
-import { Lexer } from './Lexer';
+import Lexer from './Lexer';
 
 const bindingPower: { [token: string]: number } = {
   [Token.TOK_EOF]: 0,
@@ -41,7 +41,7 @@ const bindingPower: { [token: string]: number } = {
   [Token.TOK_LPAREN]: 60,
 };
 
-export class Parser {
+class TokenParser {
   index = 0;
   tokens: LexerToken[] = [];
   parse(expression: string): ExpressionNodeTree {
@@ -56,8 +56,7 @@ export class Parser {
   }
 
   private loadTokens(expression: string): void {
-    const lexer = new Lexer();
-    this.tokens = [...lexer.tokenize(expression), { type: Token.TOK_EOF, value: '', start: expression.length }];
+    this.tokens = [...Lexer.tokenize(expression), { type: Token.TOK_EOF, value: '', start: expression.length }];
   }
 
   expression(rbp: number): ExpressionNodeTree {
@@ -381,3 +380,6 @@ export class Parser {
     return { type: 'MultiSelectHash', children: pairs };
   }
 }
+
+export const Parser = new TokenParser();
+export default Parser;

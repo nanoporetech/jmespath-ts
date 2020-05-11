@@ -7,36 +7,37 @@ import {
   InputArgument,
   InputSignature,
   RuntimeFunction,
-  FunctionSignature,
   JSONArray,
 } from './typings';
 import { isObject } from './utils';
 
-const TYPE_NAME_TABLE: { [InputArgument: number]: string } = {
-  [InputArgument.TYPE_NUMBER]: 'number',
-  [InputArgument.TYPE_ANY]: 'any',
-  [InputArgument.TYPE_STRING]: 'string',
-  [InputArgument.TYPE_ARRAY]: 'array',
-  [InputArgument.TYPE_OBJECT]: 'object',
-  [InputArgument.TYPE_BOOLEAN]: 'boolean',
-  [InputArgument.TYPE_EXPREF]: 'expression',
-  [InputArgument.TYPE_NULL]: 'null',
-  [InputArgument.TYPE_ARRAY_NUMBER]: 'Array<number>',
-  [InputArgument.TYPE_ARRAY_STRING]: 'Array<string>',
-};
-
 export class Runtime {
   _interpreter?: TreeInterpreter;
+  TYPE_NAME_TABLE: { [InputArgument: number]: string } = {
+    [InputArgument.TYPE_NUMBER]: 'number',
+    [InputArgument.TYPE_ANY]: 'any',
+    [InputArgument.TYPE_STRING]: 'string',
+    [InputArgument.TYPE_ARRAY]: 'array',
+    [InputArgument.TYPE_OBJECT]: 'object',
+    [InputArgument.TYPE_BOOLEAN]: 'boolean',
+    [InputArgument.TYPE_EXPREF]: 'expression',
+    [InputArgument.TYPE_NULL]: 'null',
+    [InputArgument.TYPE_ARRAY_NUMBER]: 'Array<number>',
+    [InputArgument.TYPE_ARRAY_STRING]: 'Array<string>',
+  };
 
-  constructor(interpreter?: TreeInterpreter) {
+  constructor(interpreter: TreeInterpreter) {
     this._interpreter = interpreter;
   }
 
-  registerFunction(name: string, functionGenerator: (ctx: Runtime) => FunctionSignature): void {
+  registerFunction(name: string, customFunction: RuntimeFunction<any, any>, signature: InputSignature[]): void {
     if (name in this.functionTable) {
       throw new Error(`Function already defined: ${name}()`);
     }
-    this.functionTable[name] = functionGenerator(this);
+    this.functionTable[name] = {
+      _func: customFunction.bind(this),
+      _signature: signature,
+    };
   }
 
   callFunction(name: string, resolvedArgs: any): unknown {
@@ -84,13 +85,13 @@ export class Runtime {
       if (!typeMatched) {
         const expected = currentSpec
           .map((typeIdentifier): string => {
-            return TYPE_NAME_TABLE[typeIdentifier];
+            return this.TYPE_NAME_TABLE[typeIdentifier];
           })
           .join(' | ');
 
         throw new Error(
           `TypeError: ${name}() expected argument ${i + 1} to be type (${expected}) but received type ${
-            TYPE_NAME_TABLE[actualType]
+            this.TYPE_NAME_TABLE[actualType]
           } instead.`,
         );
       }
@@ -158,9 +159,9 @@ export class Runtime {
     const keyFunc = (x: any) => {
       const current = interpreter.visit(exprefNode, x);
       if (!allowedTypes.includes(this.getTypeName(current) as InputArgument)) {
-        const msg = `TypeError: expected one of (${allowedTypes.map(t => TYPE_NAME_TABLE[t]).join(' | ')}), received ${
-          TYPE_NAME_TABLE[this.getTypeName(current) as InputArgument]
-        }`;
+        const msg = `TypeError: expected one of (${allowedTypes
+          .map(t => this.TYPE_NAME_TABLE[t])
+          .join(' | ')}), received ${this.TYPE_NAME_TABLE[this.getTypeName(current) as InputArgument]}`;
         throw new Error(msg);
       }
       return current;
@@ -346,7 +347,7 @@ export class Runtime {
     const exprefNode = resolvedArgs[1];
     const requiredType = this.getTypeName(interpreter.visit(exprefNode, sortedArray[0]));
     if (requiredType !== undefined && ![InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING].includes(requiredType)) {
-      throw new Error(`TypeError: unexpected type (${TYPE_NAME_TABLE[requiredType]})`);
+      throw new Error(`TypeError: unexpected type (${this.TYPE_NAME_TABLE[requiredType]})`);
     }
     const decorated = [];
     for (let i = 0; i < sortedArray.length; i += 1) {
@@ -357,8 +358,8 @@ export class Runtime {
       const exprB = interpreter.visit(exprefNode, b[1]);
       if (this.getTypeName(exprA) !== requiredType) {
         throw new Error(
-          `TypeError: expected (${TYPE_NAME_TABLE[requiredType as InputArgument]}), received ${
-            TYPE_NAME_TABLE[this.getTypeName(exprA) as InputArgument]
+          `TypeError: expected (${this.TYPE_NAME_TABLE[requiredType as InputArgument]}), received ${
+            this.TYPE_NAME_TABLE[this.getTypeName(exprA) as InputArgument]
           }`,
         );
       } else if (this.getTypeName(exprB) !== requiredType) {

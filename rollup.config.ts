@@ -1,7 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import sourceMaps from 'rollup-plugin-sourcemaps'
-import typescript from '@rollup/plugin-typescript'
+import typescript from 'rollup-plugin-typescript'
 import json from '@rollup/plugin-json'
 
 const pkg = require('./package.json')
@@ -9,10 +9,10 @@ const pkg = require('./package.json')
 const libraryName = 'jmespath'
 
 export default {
-  input: `dist/lib/index.js`,
+  input: `src/index.ts`,
   output: [
-    { dir: 'dist', exports: 'named', name: libraryName, format: 'umd', sourcemap: true },
-    { dir: 'dist', exports: 'named', format: 'es', sourcemap: true },
+    { file: pkg.main, name: libraryName, format: 'umd', exports: 'named', sourcemap: true },
+    { file: pkg.module, format: 'es', exports: 'named', sourcemap: true },
   ],
   // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
   external: [],

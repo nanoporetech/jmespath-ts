@@ -28,10 +28,11 @@ const skipChars = {
   ' ': true,
 };
 
-export class Lexer {
+class StreamLexer {
   _current = 0;
   tokenize(stream: string): LexerToken[] {
     const tokens: LexerToken[] = [];
+    this._current = 0;
 
     let start;
     let identifier;
@@ -260,3 +261,6 @@ export class Lexer {
     return false;
   }
 }
+
+export const Lexer = new StreamLexer();
+export default Lexer;

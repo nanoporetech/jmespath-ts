@@ -1,8 +1,12 @@
 {
   "name": "jmespath",
-  "version": "0.0.1",
-  "description": "A typescript implementation of jmespath.js",
-  "keywords": [],
+  "description": "JMESPath implementation in javascript",
+  "version": "1.0.0",
+  "author": {
+    "name": "James Saryerwinnie",
+    "email": "js@jamesls.com",
+    "url": "http://jamesls.com/"
+  },
   "main": "dist/jmespath.cjs.js",
   "module": "dist/jmespath.esm.js",
   "typings": "dist/typings/jmespath.d.ts",
@@ -10,10 +14,23 @@
   "files": [
     "dist"
   ],
-  "author": "Metrichor <support@nanoporetech.com>",
+  "homepage": "https://github.com/jmespath/jmespath.js",
+  "bugs": {
+    "url": "http://github.com/jmespath/jmespath.js/issues",
+    "mail": ""
+  },
+  "keywords": [
+    "jmespath",
+    "jsonpath",
+    "json",
+    "xpath"
+  ],
+  "contributors": [
+    "Metrichor <support@nanoporetech.com>"
+  ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git://github.com/jmespath/jmespath.js"
   },
   "license": "GPL-2.0",
   "engines": {
@@ -23,8 +40,8 @@
     "lint": "eslint --ignore-path .eslintignore './{src,test}/**/*.{js,ts}'",
     "lint:fix": "npm run lint -- --fix",
     "prebuild": "rimraf dist",
-    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
-    "build:check": "npm run build -- --noEmit",
+    "perf": "node scripts/perf.js",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
@@ -47,12 +64,11 @@
     "@rollup/plugin-commonjs": "^11.1.0",
     "@rollup/plugin-json": "^4.0.3",
     "@rollup/plugin-node-resolve": "^7.1.3",
-    "@rollup/plugin-typescript": "^4.1.1",
     "@types/jest": "^25.2.1",
     "@types/node": "^13.13.5",
     "@typescript-eslint/eslint-plugin": "^2.31.0",
     "@typescript-eslint/parser": "^2.31.0",
-    "antlr4-tool": "^1.1.0",
+    "benchmark": "^2.1.4",
     "colors": "^1.4.0",
     "commitizen": "^4.1.2",
     "coveralls": "^3.1.0",
@@ -71,7 +87,7 @@
     "rimraf": "^3.0.2",
     "rollup": "^2.9.0",
     "rollup-plugin-sourcemaps": "^0.6.2",
-    "rollup-plugin-typescript2": "^0.27.0",
+    "rollup-plugin-typescript": "^1.0.1",
     "semantic-release": "^17.0.7",
     "shelljs": "^0.8.4",
     "ts-jest": "^25.5.1",

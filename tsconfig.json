@@ -14,7 +14,7 @@
     ],
     "module": "es2015",
     "moduleResolution": "node",
-    "outDir": "dist",
+    "outDir": "dist/lib",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
@@ -24,7 +24,7 @@
     "target": "es5",
     "typeRoots": [
       "node_modules/@types",
-      "src/types"
+      "src/typings"
     ]
   },
   "include": [

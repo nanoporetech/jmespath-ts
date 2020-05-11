@@ -1,9 +1,0 @@
-{
-  "target": "ES6",
-  "theme": "minimal",
-  "mode": "modules",
-  "out": "docs",
-  "exclude": "test",
-  "includeDeclarations": true,
-  "entryPoint": "index"
-}

@@ -1,4 +1,4 @@
-import { search, tokenize, compile } from '../src';
+import jmespath, { search, tokenize, compile, registerFunction } from '../src';
 import { strictDeepEqual } from '../src/utils';
 
 describe('tokenize', () =>  {
@@ -175,3 +175,34 @@ describe('search', () =>  {
     }
   });
 });
+
+describe('registerFunction', () =>  {
+  it('register a customFunction', () =>  {
+      expect(() => search({
+        foo: 60,
+        bar: 10
+      }, 'divide(foo, bar)')
+      ).toThrow('Unknown function: divide()');
+      jmespath.registerFunction('divide', (resolvedArgs) => {
+          const [divisor, dividend] = resolvedArgs;
+          return divisor / dividend;
+        },
+        [{ types: [jmespath.TYPE_NUMBER] }, { types: [jmespath.TYPE_NUMBER] }]
+      )
+      expect(() => search({
+        foo: 60,
+        bar: 10
+      }, 'divide(foo, bar)')
+      ).not.toThrow()
+      expect(search({
+        foo: 60,
+        bar: 10
+      }, 'divide(foo, bar)')
+      ).toEqual(6)
+  });
+  it('won\'t register a customFunction if one already exists', () =>  {
+      expect(() => registerFunction('sum', () => {}, [])
+      ).toThrow('Function already defined: sum()');
+  });
+});
+

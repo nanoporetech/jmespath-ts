@@ -1,15 +1,15 @@
-import { Token, ExpressionNodeTree } from './typings';
+import { Token } from './typings';
 import { isFalse, objValues, isObject, strictDeepEqual } from './utils';
 import { Runtime } from './Runtime';
 
 export class TreeInterpreter {
   runtime: Runtime;
 
-  constructor(runtime: Runtime) {
-    this.runtime = runtime;
+  constructor() {
+    this.runtime = new Runtime(this);
   }
 
-  search(node: any, value: any) {
+  search(node: any, value: any): any {
     return this.visit(node, value);
   }
 
@@ -259,3 +259,6 @@ export class TreeInterpreter {
     return nextActualValue;
   }
 }
+
+export const TreeInterpreterInstance = new TreeInterpreter();
+export default TreeInterpreterInstance;
