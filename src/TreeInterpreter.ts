@@ -1,4 +1,13 @@
-import { Token } from './typings';
+import {
+  Token,
+  JSONValue,
+  ExpressionNodeTree,
+  FieldNode,
+  ExpressionNode,
+  ValueNode,
+  ComparitorNode,
+  KeyValuePairNode,
+} from './typings';
 import { isFalse, objValues, isObject, strictDeepEqual } from './utils';
 import { Runtime } from './Runtime';
 
@@ -9,11 +18,11 @@ export class TreeInterpreter {
     this.runtime = new Runtime(this);
   }
 
-  search(node: any, value: any): any {
-    return this.visit(node, value);
+  search(node: ExpressionNodeTree, value: JSONValue): JSONValue {
+    return this.visit(node, value) as JSONValue;
   }
 
-  visit(node: any, value: any): any {
+  visit(node: ExpressionNodeTree, value: JSONValue | ExpressionNodeTree): JSONValue | ExpressionNodeTree {
     let matched;
     let current;
     let result;
@@ -31,7 +40,7 @@ export class TreeInterpreter {
           return null;
         }
         if (isObject(value)) {
-          field = value[node.name];
+          field = value[(node as FieldNode).name as string];
           if (field === undefined) {
             return null;
           }
@@ -39,23 +48,23 @@ export class TreeInterpreter {
         }
         return null;
       case 'Subexpression':
-        result = this.visit(node.children[0], value);
-        for (i = 1; i < node.children.length; i += 1) {
-          result = this.visit(node.children[1], result);
+        result = this.visit((node as ExpressionNode).children[0], value);
+        for (i = 1; i < (node as ExpressionNode).children.length; i += 1) {
+          result = this.visit((node as ExpressionNode).children[1], result);
           if (result === null) {
             return null;
           }
         }
         return result;
       case 'IndexExpression':
-        left = this.visit(node.children[0], value);
-        right = this.visit(node.children[1], left);
+        left = this.visit((node as ExpressionNode).children[0], value);
+        right = this.visit((node as ExpressionNode).children[1], left);
         return right;
       case 'Index':
         if (!Array.isArray(value)) {
           return null;
         }
-        let index = node.value;
+        let index = (node as ValueNode<number>).value;
         if (index < 0) {
           index = value.length + index;
         }
@@ -68,7 +77,7 @@ export class TreeInterpreter {
         if (!Array.isArray(value)) {
           return null;
         }
-        const sliceParams = [...node.children];
+        const sliceParams = [...(node as ExpressionNode<number>).children];
         const computed = this.computeSliceParams(value.length, sliceParams);
         const [start, stop, step] = computed;
         result = [];
@@ -83,56 +92,56 @@ export class TreeInterpreter {
         }
         return result;
       case 'Projection':
-        base = this.visit(node.children[0], value);
+        base = this.visit((node as ExpressionNode).children[0], value);
         if (!Array.isArray(base)) {
           return null;
         }
         collected = [];
         for (i = 0; i < base.length; i += 1) {
-          current = this.visit(node.children[1], base[i]);
+          current = this.visit((node as ExpressionNode).children[1], base[i]);
           if (current !== null) {
             collected.push(current);
           }
         }
-        return collected;
+        return collected as JSONValue;
       case 'ValueProjection':
-        base = this.visit(node.children[0], value);
+        base = this.visit((node as ExpressionNode).children[0], value);
         if (!isObject(base)) {
           return null;
         }
         collected = [];
         const values = objValues(base);
         for (i = 0; i < values.length; i += 1) {
-          current = this.visit(node.children[1], values[i]);
+          current = this.visit((node as ExpressionNode).children[1], values[i]);
           if (current !== null) {
             collected.push(current);
           }
         }
-        return collected;
+        return collected as JSONValue;
       case 'FilterProjection':
-        base = this.visit(node.children[0], value);
+        base = this.visit((node as ExpressionNode).children[0], value);
         if (!Array.isArray(base)) {
           return null;
         }
         const filtered = [];
         const finalResults = [];
         for (i = 0; i < base.length; i += 1) {
-          matched = this.visit(node.children[2], base[i]);
+          matched = this.visit((node as ExpressionNode).children[2], base[i]);
           if (!isFalse(matched)) {
             filtered.push(base[i]);
           }
         }
         for (let j = 0; j < filtered.length; j += 1) {
-          current = this.visit(node.children[1], filtered[j]);
+          current = this.visit((node as ExpressionNode).children[1], filtered[j]);
           if (current !== null) {
             finalResults.push(current);
           }
         }
-        return finalResults;
+        return finalResults as JSONValue;
       case 'Comparator':
-        first = this.visit(node.children[0], value);
-        second = this.visit(node.children[1], value);
-        switch (node.name) {
+        first = this.visit((node as ExpressionNode).children[0], value);
+        second = this.visit((node as ExpressionNode).children[1], value);
+        switch ((node as ComparitorNode).name) {
           case Token.TOK_EQ:
             result = strictDeepEqual(first, second);
             break;
@@ -140,27 +149,27 @@ export class TreeInterpreter {
             result = !strictDeepEqual(first, second);
             break;
           case Token.TOK_GT:
-            result = first > second;
+            result = (first as number) > (second as number);
             break;
           case Token.TOK_GTE:
-            result = first >= second;
+            result = (first as number) >= (second as number);
             break;
           case Token.TOK_LT:
-            result = first < second;
+            result = (first as number) < (second as number);
             break;
           case Token.TOK_LTE:
-            result = first <= second;
+            result = (first as number) <= (second as number);
             break;
           default:
-            throw new Error(`Unknown comparator: ${node.name}`);
+            throw new Error(`Unknown comparator: ${(node as ComparitorNode).name}`);
         }
         return result;
       case Token.TOK_FLATTEN:
-        const original = this.visit(node.children[0], value);
+        const original = this.visit((node as ExpressionNode).children[0], value);
         if (!Array.isArray(original)) {
           return null;
         }
-        let merged: any[] = [];
+        let merged: JSONValue[] = [];
         for (i = 0; i < original.length; i += 1) {
           current = original[i];
           if (Array.isArray(current)) {
@@ -177,52 +186,52 @@ export class TreeInterpreter {
           return null;
         }
         collected = [];
-        for (i = 0; i < node.children.length; i += 1) {
-          collected.push(this.visit(node.children[i], value));
+        for (i = 0; i < (node as ExpressionNode).children.length; i += 1) {
+          collected.push(this.visit((node as ExpressionNode).children[i], value));
         }
-        return collected;
+        return collected as JSONValue;
       case 'MultiSelectHash':
         if (value === null) {
           return null;
         }
         collected = {};
-        let child;
-        for (i = 0; i < node.children.length; i += 1) {
-          child = node.children[i];
-          collected[child.name] = this.visit(child.value, value);
+        let child: KeyValuePairNode;
+        for (i = 0; i < (node as ExpressionNode).children.length; i += 1) {
+          child = (node as ExpressionNode<KeyValuePairNode>).children[i];
+          collected[child.name as string] = this.visit(child.value, value);
         }
         return collected;
       case 'OrExpression':
-        matched = this.visit(node.children[0], value);
+        matched = this.visit((node as ExpressionNode).children[0], value);
         if (isFalse(matched)) {
-          matched = this.visit(node.children[1], value);
+          matched = this.visit((node as ExpressionNode).children[1], value);
         }
         return matched;
       case 'AndExpression':
-        first = this.visit(node.children[0], value);
+        first = this.visit((node as ExpressionNode).children[0], value);
 
         if (isFalse(first)) {
           return first;
         }
-        return this.visit(node.children[1], value);
+        return this.visit((node as ExpressionNode).children[1], value);
       case 'NotExpression':
-        first = this.visit(node.children[0], value);
+        first = this.visit((node as ExpressionNode).children[0], value);
         return isFalse(first);
       case 'Literal':
-        return node.value;
+        return (node as ValueNode<JSONValue>).value;
       case Token.TOK_PIPE:
-        left = this.visit(node.children[0], value);
-        return this.visit(node.children[1], left);
+        left = this.visit((node as ExpressionNode).children[0], value);
+        return this.visit((node as ExpressionNode).children[1], left);
       case Token.TOK_CURRENT:
         return value;
       case 'Function':
-        const resolvedArgs = [];
-        for (let j = 0; j < node.children.length; j += 1) {
-          resolvedArgs.push(this.visit(node.children[j], value));
+        const resolvedArgs: JSONValue[] = [];
+        for (let j = 0; j < (node as ExpressionNode).children.length; j += 1) {
+          resolvedArgs.push(this.visit((node as ExpressionNode).children[j], value) as JSONValue);
         }
-        return this.runtime.callFunction(node.name, resolvedArgs);
+        return this.runtime.callFunction((node as FieldNode).name as string, resolvedArgs) as JSONValue;
       case 'ExpressionReference':
-        const refNode = node.children[0];
+        const refNode = (node as ExpressionNode).children[0] as ExpressionNode;
         refNode.jmespathType = Token.TOK_EXPREF;
         return refNode;
       default:

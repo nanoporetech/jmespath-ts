@@ -59,6 +59,7 @@ export interface KeyValuePairNode extends FieldNode, ValueNode<ExpressionNodeTre
 
 export interface ExpressionNode<T = ExpressionNodeTree> extends Node {
   children: T[];
+  jmespathType?: Token;
 }
 
 export interface ComparitorNode extends ExpressionNode {
