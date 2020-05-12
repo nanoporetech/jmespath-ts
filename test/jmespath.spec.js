@@ -184,8 +184,8 @@ describe('registerFunction', () =>  {
       }, 'divide(foo, bar)')
       ).toThrow('Unknown function: divide()');
       jmespath.registerFunction('divide', (resolvedArgs) => {
-          const [divisor, dividend] = resolvedArgs;
-          return divisor / dividend;
+          const [dividend, divisor] = resolvedArgs;
+          return dividend / divisor;
         },
         [{ types: [jmespath.TYPE_NUMBER] }, { types: [jmespath.TYPE_NUMBER] }]
       )
