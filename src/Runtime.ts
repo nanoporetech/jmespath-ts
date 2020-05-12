@@ -367,12 +367,16 @@ export class Runtime {
           }`,
         );
       } else if (this.getTypeName(exprB) !== requiredType) {
-        throw new Error(`TypeError: expected ${requiredType}, received ${this.getTypeName(exprB)}`);
+        throw new Error(
+          `TypeError: expected (${this.TYPE_NAME_TABLE[requiredType as InputArgument]}), received ${
+            this.TYPE_NAME_TABLE[this.getTypeName(exprB) as InputArgument]
+          }`,
+        );
       }
       if (exprA > exprB) {
         return 1;
       }
-      return exprA < exprB ? -1 : 0;
+      return exprA < exprB ? -1 : (a[0] as number) - (b[0] as number);
     });
     for (let j = 0; j < decorated.length; j += 1) {
       sortedArray[j] = decorated[j][1];
