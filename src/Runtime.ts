@@ -8,6 +8,7 @@ import {
   InputSignature,
   RuntimeFunction,
   JSONArray,
+  ExpressionNode,
 } from './typings';
 import { isObject } from './utils';
 
@@ -153,11 +154,14 @@ export class Runtime {
     }
   }
 
-  createKeyFunction(exprefNode: any, allowedTypes: InputArgument[]) {
+  createKeyFunction(
+    exprefNode: ExpressionNode,
+    allowedTypes: InputArgument[],
+  ): ((x: JSONValue) => JSONValue) | undefined {
     if (!this._interpreter) return;
     const interpreter = this._interpreter;
-    const keyFunc = (x: any) => {
-      const current = interpreter.visit(exprefNode, x);
+    const keyFunc = (x: JSONValue): JSONValue => {
+      const current = interpreter.visit(exprefNode, x) as JSONValue;
       if (!allowedTypes.includes(this.getTypeName(current) as InputArgument)) {
         const msg = `TypeError: expected one of (${allowedTypes
           .map(t => this.TYPE_NAME_TABLE[t])
@@ -245,16 +249,16 @@ export class Runtime {
     return maxElement;
   };
 
-  private functionMaxBy = (resolvedArgs: any[]) => {
+  private functionMaxBy = (resolvedArgs: [JSONValue[], ExpressionNode]): JSONValue => {
     const exprefNode = resolvedArgs[1];
     const resolvedArray = resolvedArgs[0];
     const keyFunction = this.createKeyFunction(exprefNode, [InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING]);
     let maxNumber = -Infinity;
-    let maxRecord;
-    let current;
+    let maxRecord!: JSONValue;
+    let current: number | undefined;
     for (let i = 0; i < resolvedArray.length; i += 1) {
-      current = keyFunction && keyFunction(resolvedArray[i]);
-      if (current > maxNumber) {
+      current = keyFunction && (keyFunction(resolvedArray[i]) as number);
+      if (current !== undefined && current > maxNumber) {
         maxNumber = current;
         maxRecord = resolvedArray[i];
       }
@@ -292,16 +296,16 @@ export class Runtime {
     return minElement;
   };
 
-  private functionMinBy = (resolvedArgs: any[]) => {
+  private functionMinBy = (resolvedArgs: [JSONValue[], ExpressionNode]): JSONValue => {
     const exprefNode = resolvedArgs[1];
     const resolvedArray = resolvedArgs[0];
     const keyFunction = this.createKeyFunction(exprefNode, [InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING]);
     let minNumber = Infinity;
-    let minRecord;
-    let current;
+    let minRecord!: JSONValue;
+    let current: number | undefined;
     for (let i = 0; i < resolvedArray.length; i += 1) {
-      current = keyFunction && keyFunction(resolvedArray[i]);
-      if (current < minNumber) {
+      current = keyFunction && (keyFunction(resolvedArray[i]) as number);
+      if (current !== undefined && current < minNumber) {
         minNumber = current;
         minRecord = resolvedArray[i];
       }
@@ -337,7 +341,7 @@ export class Runtime {
     return [...inputValue].sort();
   };
 
-  private functionSortBy = (resolvedArgs: any[]) => {
+  private functionSortBy = (resolvedArgs: [number[] | string[], ExpressionNode]): number[] | string[] => {
     if (!this._interpreter) return [];
     const sortedArray = resolvedArgs[0].slice(0);
     if (sortedArray.length === 0) {
@@ -345,7 +349,7 @@ export class Runtime {
     }
     const interpreter = this._interpreter;
     const exprefNode = resolvedArgs[1];
-    const requiredType = this.getTypeName(interpreter.visit(exprefNode, sortedArray[0]));
+    const requiredType = this.getTypeName(interpreter.visit(exprefNode, sortedArray[0]) as JSONValue);
     if (requiredType !== undefined && ![InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING].includes(requiredType)) {
       throw new Error(`TypeError: unexpected type (${this.TYPE_NAME_TABLE[requiredType]})`);
     }
@@ -354,8 +358,8 @@ export class Runtime {
       decorated.push([i, sortedArray[i]]);
     }
     decorated.sort((a, b) => {
-      const exprA = interpreter.visit(exprefNode, a[1]);
-      const exprB = interpreter.visit(exprefNode, b[1]);
+      const exprA = interpreter.visit(exprefNode, a[1]) as number | string;
+      const exprB = interpreter.visit(exprefNode, b[1]) as number | string;
       if (this.getTypeName(exprA) !== requiredType) {
         throw new Error(
           `TypeError: expected (${this.TYPE_NAME_TABLE[requiredType as InputArgument]}), received ${
@@ -368,10 +372,7 @@ export class Runtime {
       if (exprA > exprB) {
         return 1;
       }
-      if (exprA < exprB) {
-        return -1;
-      }
-      return a[0] - b[0];
+      return exprA < exprB ? -1 : 0;
     });
     for (let j = 0; j < decorated.length; j += 1) {
       sortedArray[j] = decorated[j][1];
