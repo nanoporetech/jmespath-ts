@@ -9,8 +9,8 @@
   },
   "main": "dist/jmespath.cjs.js",
   "module": "dist/jmespath.esm.js",
-  "typings": "dist/typings/jmespath.d.ts",
-  "types": "dist/typings/jmespath.d.ts",
+  "typings": "dist/types/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "files": [
     "dist"
   ],
