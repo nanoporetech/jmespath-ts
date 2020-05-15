@@ -1,51 +1,130 @@
 ![Node.js CI](https://github.com/nanoporetech/jmespath-ts/workflows/Node.js%20CI/badge.svg?branch=master)
 
-# jmespath.js
+# @metrichor/jmespath
 
 
-jmespath.js is a javascript implementation of JMESPath,
-which is a query language for JSON.  It will take a JSON
-document and transform it into another JSON document
-through a JMESPath expression.
+@metrichor/jmespath is a **typescript** implementation of the [JMESPath](https://jmespath.org) spec.
 
-Using jmespath.js is really easy.  There's a single function
-you use, `jmespath.search`:
+JMESPath is a query language for JSON. It will take a JSON document
+as input and transform it into another JSON document
+given a JMESPath expression.
 
+## INSTALLATION
 
 ```
-> var jmespath = require('jmespath');
-> jmespath.search({foo: {bar: {baz: [0, 1, 2, 3, 4]}}}, "foo.bar.baz[2]")
-2
+npm install @metrichor/jmespath
 ```
 
-In the example we gave the ``search`` function input data of
+## USAGE
+
+### `search(data: JSONValue, expression: string): JSONValue`
+
+```javascript
+/* using ES modules */
+import { search } from '@metrichor/jmespath';
+
+
+/* using CommonJS modules */
+const search = require('@metrichor/jmespath').search;
+
+
+search({foo: {bar: {baz: [0, 1, 2, 3, 4]}}}, "foo.bar.baz[2]")
+
+// OUTPUTS: 2
+
+```
+
+In the example we gave the `search` function input data of
 `{foo: {bar: {baz: [0, 1, 2, 3, 4]}}}` as well as the JMESPath
 expression `foo.bar.baz[2]`, and the `search` function evaluated
-the expression against the input data to produce the result ``2``.
+the expression against the input data to produce the result `2`.
 
-The JMESPath language can do a lot more than select an element
+The JMESPath language can do *a lot* more than select an element
 from a list.  Here are a few more examples:
 
-```
-> jmespath.search({foo: {bar: {baz: [0, 1, 2, 3, 4]}}}, "foo.bar")
-{ baz: [ 0, 1, 2, 3, 4 ] }
+```javascript
+import { search } from '@metrichor/jmespath';
 
-> jmespath.search({"foo": [{"first": "a", "last": "b"},
-                           {"first": "c", "last": "d"}]},
-                  "foo[*].first")
-[ 'a', 'c' ]
+/* --- EXAMPLE 1 --- */
 
-> jmespath.search({"foo": [{"age": 20}, {"age": 25},
-                           {"age": 30}, {"age": 35},
-                           {"age": 40}]},
-                  "foo[?age > `30`]")
-[ { age: 35 }, { age: 40 } ]
+let JSON_DOCUMENT = {
+  foo: {
+    bar: {
+      baz: [0, 1, 2, 3, 4]
+    }
+  }
+};
+
+search(JSON_DOCUMENT, "foo.bar");
+// OUTPUTS: { baz: [ 0, 1, 2, 3, 4 ] }
+
+
+/* --- EXAMPLE 2 --- */
+
+JSON_DOCUMENT = {
+  "foo": [
+    {"first": "a", "last": "b"},
+    {"first": "c", "last": "d"}
+  ]
+};
+
+search(JSON_DOCUMENT, "foo[*].first")
+// OUTPUTS: [ 'a', 'c' ]
+
+
+/* --- EXAMPLE 3 --- */
+
+JSON_DOCUMENT = {
+  "foo": [
+    {"age": 20},
+    {"age": 25},
+    {"age": 30},
+    {"age": 35},
+    {"age": 40}
+  ]
+}
+
+search(JSON_DOCUMENT, "foo[?age > `30`]");
+// OUTPUTS: [ { age: 35 }, { age: 40 } ]
 ```
+
+
+### `registerFunction(functionName: string, customFunction: RuntimeFunction, signature: InputSignature[]): void`
+
+Extend the list of built in JMESpath expressions with your own functions.
+
+```javascript
+  import {search, registerFunction, TYPE_NUMBER} from '@metrichor/jmespath'
+
+
+  search({ foo: 60, bar: 10 }, 'divide(foo, bar)')
+  // THROWS ERROR: Error: Unknown function: divide()
+
+  registerFunction(
+    'divide', // FUNCTION NAME
+    (resolvedArgs) => {   // CUSTOM FUNCTION
+      const [dividend, divisor] = resolvedArgs;
+      return dividend / divisor;
+    },
+    [{ types: [TYPE_NUMBER] }, { types: [TYPE_NUMBER] }] //SIGNATURE
+  );
+
+  search({ foo: 60,bar: 10 }, 'divide(foo, bar)');
+  // OUTPUTS: 6
+
+```
+
+### `compile(expression: string): ExpressionNodeTree`
+
+You can precompile all your expressions ready for use later on. the `compile`
+function takes a JMESPath expression and returns an abstract syntax tree that
+can be used by the TreeInterpreter function
+
 
 ## More Resources
 
 The example above only show a small amount of what
-a JMESPath expression can do.  If you want to take a
+a JMESPath expression can do. If you want to take a
 tour of the language, the *best* place to go is the
 [JMESPath Tutorial](http://jmespath.org/tutorial.html).
 
