@@ -10,13 +10,13 @@ import {
   RuntimeFunction,
 } from './typings/index';
 
-export function compile(stream: string): ExpressionNodeTree {
-  const ast = Parser.parse(stream);
-  return ast;
+export function compile(expression: string): ExpressionNodeTree {
+  const nodeTree = Parser.parse(expression);
+  return nodeTree;
 }
 
-export function tokenize(stream: string): LexerToken[] {
-  return Lexer.tokenize(stream);
+export function tokenize(expression: string): LexerToken[] {
+  return Lexer.tokenize(expression);
 }
 
 export const registerFunction = (
@@ -28,8 +28,8 @@ export const registerFunction = (
 };
 
 export function search(data: JSONValue, expression: string): JSONValue {
-  const node = Parser.parse(expression);
-  return TreeInterpreter.search(node, data);
+  const nodeTree = Parser.parse(expression);
+  return TreeInterpreter.search(nodeTree, data);
 }
 
 export const jmespath = {
