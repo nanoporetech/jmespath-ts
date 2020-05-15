@@ -1,13 +1,13 @@
 {
   "name": "@metrichor/jmespath",
   "description": "Typescript implementation of the JMESPath spec (100% compliant)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Oxford Nanopore Technologies",
     "email": "support@nanoporetech.com",
     "url": "https://nanoporetech.com"
   },
-  "main": "dist/jmespath.cjs.js",
+  "main": "dist/jmespath.umd.js",
   "module": "dist/jmespath.esm.js",
   "typings": "dist/types/index.d.ts",
   "types": "dist/types/index.d.ts",
