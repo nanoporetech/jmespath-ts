@@ -32,7 +32,7 @@
     "type": "git",
     "url": "git://github.com/jmespath/jmespath.js"
   },
-  "license": "GPL-2.0",
+  "license": "MPL-2.0",
   "engines": {
     "node": ">=10.0.0"
   },
