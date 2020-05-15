@@ -10,6 +10,17 @@ import {
   RuntimeFunction,
 } from './typings/index';
 
+export const TYPE_ANY = InputArgument.TYPE_ANY;
+export const TYPE_ARRAY = InputArgument.TYPE_ARRAY;
+export const TYPE_ARRAY_NUMBER = InputArgument.TYPE_ARRAY_NUMBER;
+export const TYPE_ARRAY_STRING = InputArgument.TYPE_ARRAY_STRING;
+export const TYPE_BOOLEAN = InputArgument.TYPE_BOOLEAN;
+export const TYPE_EXPREF = InputArgument.TYPE_EXPREF;
+export const TYPE_NULL = InputArgument.TYPE_NULL;
+export const TYPE_NUMBER = InputArgument.TYPE_NUMBER;
+export const TYPE_OBJECT = InputArgument.TYPE_OBJECT;
+export const TYPE_STRING = InputArgument.TYPE_STRING;
+
 export function compile(expression: string): ExpressionNodeTree {
   const nodeTree = Parser.parse(expression);
   return nodeTree;
@@ -33,20 +44,20 @@ export function search(data: JSONValue, expression: string): JSONValue {
 }
 
 export const jmespath = {
-  search,
   compile,
-  tokenize,
   registerFunction,
-  TYPE_NUMBER: InputArgument.TYPE_NUMBER,
-  TYPE_ANY: InputArgument.TYPE_ANY,
-  TYPE_STRING: InputArgument.TYPE_STRING,
-  TYPE_ARRAY: InputArgument.TYPE_ARRAY,
-  TYPE_OBJECT: InputArgument.TYPE_OBJECT,
-  TYPE_BOOLEAN: InputArgument.TYPE_BOOLEAN,
-  TYPE_EXPREF: InputArgument.TYPE_EXPREF,
-  TYPE_NULL: InputArgument.TYPE_NULL,
-  TYPE_ARRAY_NUMBER: InputArgument.TYPE_ARRAY_NUMBER,
-  TYPE_ARRAY_STRING: InputArgument.TYPE_ARRAY_STRING,
+  search,
+  tokenize,
+  TYPE_ANY,
+  TYPE_ARRAY_NUMBER,
+  TYPE_ARRAY_STRING,
+  TYPE_ARRAY,
+  TYPE_BOOLEAN,
+  TYPE_EXPREF,
+  TYPE_NULL,
+  TYPE_NUMBER,
+  TYPE_OBJECT,
+  TYPE_STRING,
 };
 
 export default jmespath;
