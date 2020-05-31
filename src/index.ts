@@ -21,9 +21,9 @@ export const TYPE_NUMBER = InputArgument.TYPE_NUMBER;
 export const TYPE_OBJECT = InputArgument.TYPE_OBJECT;
 export const TYPE_STRING = InputArgument.TYPE_STRING;
 
-export function compile(expression: string): ExpressionNodeTree {
+export function compile(expression: string): (data: JSONValue) => JSONValue {
   const nodeTree = Parser.parse(expression);
-  return nodeTree;
+  return (data: JSONValue) => TreeInterpreter.search(nodeTree, data);
 }
 
 export function tokenize(expression: string): LexerToken[] {
