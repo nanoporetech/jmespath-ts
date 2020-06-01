@@ -120,6 +120,17 @@ You can precompile all your expressions ready for use later on. the `compile`
 function takes a JMESPath expression and returns an abstract syntax tree that
 can be used by the TreeInterpreter function
 
+```javascript
+import { compile, TreeInterpreter } from '@metrichor/jmespath';
+
+const ast = compile('foo.bar');
+
+TreeInterpreter.search(ast, {foo: {bar: 'BAZ'}})
+// RETURNS: "BAZ"
+
+
+```
+
 
 ## More Resources
 

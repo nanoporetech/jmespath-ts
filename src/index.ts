@@ -1,6 +1,6 @@
 import Parser from './Parser';
 import Lexer from './Lexer';
-import TreeInterpreter from './TreeInterpreter';
+import TreeInterpreterInst from './TreeInterpreter';
 import {
   ExpressionNodeTree,
   LexerToken,
@@ -21,9 +21,9 @@ export const TYPE_NUMBER = InputArgument.TYPE_NUMBER;
 export const TYPE_OBJECT = InputArgument.TYPE_OBJECT;
 export const TYPE_STRING = InputArgument.TYPE_STRING;
 
-export function compile(expression: string): (data: JSONValue) => JSONValue {
+export function compile(expression: string): ExpressionNodeTree {
   const nodeTree = Parser.parse(expression);
-  return (data: JSONValue) => TreeInterpreter.search(nodeTree, data);
+  return nodeTree;
 }
 
 export function tokenize(expression: string): LexerToken[] {
@@ -35,19 +35,22 @@ export const registerFunction = (
   customFunction: RuntimeFunction<any, any>,
   signature: InputSignature[],
 ): void => {
-  TreeInterpreter.runtime.registerFunction(functionName, customFunction, signature);
+  TreeInterpreterInst.runtime.registerFunction(functionName, customFunction, signature);
 };
 
 export function search(data: JSONValue, expression: string): JSONValue {
   const nodeTree = Parser.parse(expression);
-  return TreeInterpreter.search(nodeTree, data);
+  return TreeInterpreterInst.search(nodeTree, data);
 }
+
+export const TreeInterpreter = TreeInterpreterInst;
 
 export const jmespath = {
   compile,
   registerFunction,
   search,
   tokenize,
+  TreeInterpreter,
   TYPE_ANY,
   TYPE_ARRAY_NUMBER,
   TYPE_ARRAY_STRING,

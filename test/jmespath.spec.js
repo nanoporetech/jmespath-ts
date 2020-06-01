@@ -1,4 +1,4 @@
-import jmespath, { search, tokenize, compile, registerFunction } from '../src';
+import jmespath, { search, tokenize, compile, registerFunction, TreeInterpreter } from '../src';
 import { strictDeepEqual } from '../src/utils';
 
 describe('tokenize', () =>  {
@@ -103,6 +103,13 @@ describe('tokenize', () =>  {
 describe('parsing', () =>  {
   it('should parse field node', () =>  {
     expect(compile('foo')).toMatchObject({ type: 'Field', name: 'foo' });
+  });
+});
+
+describe('Searches compiled ast', () =>  {
+  it('search a compiled expression', () =>  {
+    const ast = compile('foo.bar');
+    expect(TreeInterpreter.search(ast, {foo: {bar: 'BAZ'}})).toEqual('BAZ');
   });
 });
 
