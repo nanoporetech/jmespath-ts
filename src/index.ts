@@ -10,6 +10,8 @@ import {
   RuntimeFunction,
 } from './typings/index';
 
+export type { FunctionSignature, RuntimeFunction, InputSignature } from './typings/index';
+
 export const TYPE_ANY = InputArgument.TYPE_ANY;
 export const TYPE_ARRAY = InputArgument.TYPE_ARRAY;
 export const TYPE_ARRAY_NUMBER = InputArgument.TYPE_ARRAY_NUMBER;

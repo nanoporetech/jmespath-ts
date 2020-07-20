@@ -128,7 +128,6 @@ const ast = compile('foo.bar');
 TreeInterpreter.search(ast, {foo: {bar: 'BAZ'}})
 // RETURNS: "BAZ"
 
-
 ```
 
 
