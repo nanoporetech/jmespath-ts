@@ -2,10 +2,10 @@
   "extends": "./tsconfig.base.json",
   "exclude": [
     "node_modules",
-    "dist",
-    "test"
+    "dist"
   ],
   "include": [
-    "src"
+    "src",
+    "test"
   ]
 }

@@ -1,8 +1,10 @@
-export const isObject = (obj: any): boolean => {
+import { JSONValue, JSONArray, JSONObject } from '../';
+
+export const isObject = (obj: JSONValue): boolean => {
   return obj !== null && Object.prototype.toString.call(obj) === '[object Object]';
 };
 
-export const strictDeepEqual = (first: any, second: any): boolean => {
+export const strictDeepEqual = (first: JSONValue, second: JSONValue): boolean => {
   if (first === second) {
     return true;
   }
@@ -11,27 +13,27 @@ export const strictDeepEqual = (first: any, second: any): boolean => {
     return false;
   }
   if (Array.isArray(first)) {
-    if (first.length !== second.length) {
+    if (first.length !== (second as JSONArray).length) {
       return false;
     }
     for (let i = 0; i < first.length; i += 1) {
-      if (!strictDeepEqual(first[i], second[i])) {
+      if (!strictDeepEqual(first[i], (second as JSONArray)[i])) {
         return false;
       }
     }
     return true;
   }
-  if (isObject(first)) {
+  if (isObject(first as JSONValue)) {
     const keysSeen = {};
-    for (const key in first) {
+    for (const key in first as JSONObject) {
       if (Object.hasOwnProperty.call(first, key)) {
-        if (!strictDeepEqual(first[key], second[key])) {
+        if (!strictDeepEqual((first as JSONObject)[key], (second as JSONObject)[key])) {
           return false;
         }
         keysSeen[key] = true;
       }
     }
-    for (const key2 in second) {
+    for (const key2 in second as JSONObject) {
       if (Object.hasOwnProperty.call(second, key2)) {
         if (keysSeen[key2] !== true) {
           return false;
@@ -43,31 +45,22 @@ export const strictDeepEqual = (first: any, second: any): boolean => {
   return false;
 };
 
-export const isFalse = (obj: any): boolean => {
+export const isFalse = (obj: JSONValue): boolean => {
   if (obj === '' || obj === false || obj === null || obj === undefined) {
     return true;
   }
   if (Array.isArray(obj) && obj.length === 0) {
     return true;
   }
-  if (isObject(obj)) {
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+  if (isObject(obj as JSONValue)) {
+    for (const key in obj as JSONObject) {
+      if ((obj as JSONObject).hasOwnProperty(key)) {
         return false;
       }
     }
     return true;
   }
   return false;
-};
-
-export const objValues = (obj: any): any[] => {
-  const keys = Object.keys(obj);
-  const values = [];
-  for (let i = 0; i < keys.length; i += 1) {
-    values.push(obj[keys[i]]);
-  }
-  return values;
 };
 
 export const trimLeft: (str: string) => string =

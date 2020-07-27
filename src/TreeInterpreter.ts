@@ -1,15 +1,15 @@
 import {
   Token,
-  JSONValue,
   ExpressionNodeTree,
   FieldNode,
   ExpressionNode,
   ValueNode,
   ComparitorNode,
   KeyValuePairNode,
-} from './typings';
-import { isFalse, objValues, isObject, strictDeepEqual } from './utils';
+} from './Lexer';
+import { isFalse, isObject, strictDeepEqual } from './utils';
 import { Runtime } from './Runtime';
+import { JSONValue, JSONObject } from '.';
 
 export class TreeInterpreter {
   runtime: Runtime;
@@ -39,8 +39,8 @@ export class TreeInterpreter {
         if (value === null) {
           return null;
         }
-        if (isObject(value)) {
-          field = value[(node as FieldNode).name as string];
+        if (isObject(value as JSONValue)) {
+          field = (value as JSONObject)[(node as FieldNode).name as string];
           if (field === undefined) {
             return null;
           }
@@ -106,11 +106,11 @@ export class TreeInterpreter {
         return collected as JSONValue;
       case 'ValueProjection':
         base = this.visit((node as ExpressionNode).children[0], value);
-        if (!isObject(base)) {
+        if (!isObject(base as JSONValue)) {
           return null;
         }
         collected = [];
-        const values = objValues(base);
+        const values = Object.values(base as JSONObject);
         for (i = 0; i < values.length; i += 1) {
           current = this.visit((node as ExpressionNode).children[1], values[i]);
           if (current !== null) {
@@ -127,7 +127,7 @@ export class TreeInterpreter {
         const finalResults = [];
         for (i = 0; i < base.length; i += 1) {
           matched = this.visit((node as ExpressionNode).children[2], base[i]);
-          if (!isFalse(matched)) {
+          if (!isFalse(matched as JSONValue)) {
             filtered.push(base[i]);
           }
         }
@@ -143,10 +143,10 @@ export class TreeInterpreter {
         second = this.visit((node as ExpressionNode).children[1], value);
         switch ((node as ComparitorNode).name) {
           case Token.TOK_EQ:
-            result = strictDeepEqual(first, second);
+            result = strictDeepEqual(first as JSONValue, second as JSONValue);
             break;
           case Token.TOK_NE:
-            result = !strictDeepEqual(first, second);
+            result = !strictDeepEqual(first as JSONValue, second as JSONValue);
             break;
           case Token.TOK_GT:
             result = (first as number) > (second as number);
@@ -203,20 +203,20 @@ export class TreeInterpreter {
         return collected;
       case 'OrExpression':
         matched = this.visit((node as ExpressionNode).children[0], value);
-        if (isFalse(matched)) {
+        if (isFalse(matched as JSONValue)) {
           matched = this.visit((node as ExpressionNode).children[1], value);
         }
         return matched;
       case 'AndExpression':
         first = this.visit((node as ExpressionNode).children[0], value);
 
-        if (isFalse(first)) {
+        if (isFalse(first as JSONValue)) {
           return first;
         }
         return this.visit((node as ExpressionNode).children[1], value);
       case 'NotExpression':
         first = this.visit((node as ExpressionNode).children[0], value);
-        return isFalse(first);
+        return isFalse(first as JSONValue);
       case 'Literal':
         return (node as ValueNode<JSONValue>).value;
       case Token.TOK_PIPE:

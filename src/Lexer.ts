@@ -1,5 +1,70 @@
-import { Token, LexerToken, JSONValue } from './typings';
 import { isAlpha, isNum, isAlphaNum, trimLeft } from './utils';
+import { JSONValue } from '.';
+
+export enum Token {
+  TOK_EOF = 'EOF',
+  TOK_UNQUOTEDIDENTIFIER = 'UnquotedIdentifier',
+  TOK_QUOTEDIDENTIFIER = 'QuotedIdentifier',
+  TOK_RBRACKET = 'Rbracket',
+  TOK_RPAREN = 'Rparen',
+  TOK_COMMA = 'Comma',
+  TOK_COLON = 'Colon',
+  TOK_RBRACE = 'Rbrace',
+  TOK_NUMBER = 'Number',
+  TOK_CURRENT = 'Current',
+  TOK_EXPREF = 'Expref',
+  TOK_PIPE = 'Pipe',
+  TOK_OR = 'Or',
+  TOK_AND = 'And',
+  TOK_EQ = 'EQ',
+  TOK_GT = 'GT',
+  TOK_LT = 'LT',
+  TOK_GTE = 'GTE',
+  TOK_LTE = 'LTE',
+  TOK_NE = 'NE',
+  TOK_FLATTEN = 'Flatten',
+  TOK_STAR = 'Star',
+  TOK_FILTER = 'Filter',
+  TOK_DOT = 'Dot',
+  TOK_NOT = 'Not',
+  TOK_LBRACE = 'Lbrace',
+  TOK_LBRACKET = 'Lbracket',
+  TOK_LPAREN = 'Lparen',
+  TOK_LITERAL = 'Literal',
+}
+
+export type LexerTokenValue = string | number | JSONValue;
+
+export interface LexerToken {
+  type: Token;
+  value: LexerTokenValue;
+  start: number;
+}
+
+export interface Node {
+  type: string;
+}
+
+export interface ValueNode<T = LexerTokenValue> extends Node {
+  value: T;
+}
+
+export interface FieldNode extends Node {
+  name: LexerTokenValue;
+}
+
+export interface KeyValuePairNode extends FieldNode, ValueNode<ExpressionNodeTree> {}
+
+export interface ExpressionNode<T = ExpressionNodeTree> extends Node {
+  children: T[];
+  jmespathType?: Token;
+}
+
+export interface ComparitorNode extends ExpressionNode {
+  name: Token;
+}
+
+export type ExpressionNodeTree = Node | ExpressionNode | FieldNode | ValueNode;
 
 export const basicTokens = {
   '(': Token.TOK_LPAREN,
@@ -49,7 +114,7 @@ class StreamLexer {
       } else if (basicTokens[stream[this._current]] !== undefined) {
         tokens.push({
           start: this._current,
-          type: basicTokens[stream[this._current]],
+          type: basicTokens[stream[this._current]] as Token,
           value: stream[this._current],
         });
         this._current += 1;
@@ -138,7 +203,7 @@ class StreamLexer {
       this._current = current;
     }
     this._current += 1;
-    return JSON.parse(stream.slice(start, this._current));
+    return JSON.parse(stream.slice(start, this._current)) as string;
   }
 
   private consumeRawStringLiteral(stream: string): string {
@@ -231,7 +296,9 @@ class StreamLexer {
     }
     let literalString = trimLeft(stream.slice(start, this._current));
     literalString = literalString.replace('\\`', '`');
-    const literal = this.looksLikeJSON(literalString) ? JSON.parse(literalString) : JSON.parse(`"${literalString}"`);
+    const literal: JSONValue = this.looksLikeJSON(literalString)
+      ? (JSON.parse(literalString) as JSONValue)
+      : (JSON.parse(`"${literalString}"`) as string);
     this._current += 1;
     return literal;
   }
