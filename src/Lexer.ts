@@ -41,21 +41,21 @@ export interface LexerToken {
   start: number;
 }
 
-export interface Node {
+export interface ASTNode {
   type: string;
 }
 
-export interface ValueNode<T = LexerTokenValue> extends Node {
+export interface ValueNode<T = LexerTokenValue> extends ASTNode {
   value: T;
 }
 
-export interface FieldNode extends Node {
+export interface FieldNode extends ASTNode {
   name: LexerTokenValue;
 }
 
-export interface KeyValuePairNode extends FieldNode, ValueNode<ExpressionNodeTree> {}
+export type KeyValuePairNode = FieldNode & ValueNode<ExpressionNodeTree>;
 
-export interface ExpressionNode<T = ExpressionNodeTree> extends Node {
+export interface ExpressionNode<T = ExpressionNodeTree> extends ASTNode {
   children: T[];
   jmespathType?: Token;
 }
@@ -64,7 +64,7 @@ export interface ComparitorNode extends ExpressionNode {
   name: Token;
 }
 
-export type ExpressionNodeTree = Node | ExpressionNode | FieldNode | ValueNode;
+export type ExpressionNodeTree = ASTNode | ExpressionNode | FieldNode | ValueNode;
 
 export const basicTokens = {
   '(': Token.TOK_LPAREN,

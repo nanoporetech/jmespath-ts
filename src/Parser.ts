@@ -6,7 +6,7 @@ import {
   KeyValuePairNode,
   LexerToken,
   ValueNode,
-  Node,
+  ASTNode,
   Token,
 } from './Lexer';
 import Lexer from './Lexer';
@@ -110,7 +110,7 @@ class TokenParser {
           this.parseProjectionRHS(bindingPower.Star);
         return { type: 'ValueProjection', children: [left, right] } as ExpressionNode;
       case Token.TOK_FILTER:
-        return this.led(token.type, { type: 'Identity' } as Node);
+        return this.led(token.type, { type: 'Identity' } as ASTNode);
       case Token.TOK_LBRACE:
         return this.parseMultiselectHash();
       case Token.TOK_FLATTEN:
@@ -141,7 +141,7 @@ class TokenParser {
         const args: ExpressionNodeTree[] = [];
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
           if (this.lookahead(0) === Token.TOK_CURRENT) {
-            expression = { type: Token.TOK_CURRENT } as Node;
+            expression = { type: Token.TOK_CURRENT } as ASTNode;
             this.advance();
           } else {
             expression = this.expression(0);
@@ -179,11 +179,11 @@ class TokenParser {
         return { type: 'AndExpression', children: [left, right] } as ExpressionNode;
       case Token.TOK_LPAREN:
         const name = (left as FieldNode).name;
-        const args: (ExpressionNodeTree | Node)[] = [];
+        const args: (ExpressionNodeTree | ASTNode)[] = [];
         let expression;
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
           if (this.lookahead(0) === Token.TOK_CURRENT) {
-            expression = { type: Token.TOK_CURRENT } as Node;
+            expression = { type: Token.TOK_CURRENT } as ASTNode;
             this.advance();
           } else {
             expression = this.expression(0);
