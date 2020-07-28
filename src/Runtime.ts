@@ -234,8 +234,8 @@ export class Runtime {
   };
 
   private functionLength: RuntimeFunction<[string | JSONArray | JSONObject], number> = ([inputValue]) => {
-    if (!isObject(inputValue as JSONValue)) {
-      return inputValue.length as number;
+    if (!isObject(inputValue)) {
+      return inputValue.length;
     }
     return Object.keys(inputValue).length;
   };

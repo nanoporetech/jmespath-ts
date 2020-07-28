@@ -1,60 +1,52 @@
-import { JSONValue, JSONArray, JSONObject } from '../';
-
-export const isObject = (obj: JSONValue): boolean => {
+export const isObject = (obj: unknown): obj is Record<string, unknown> => {
   return obj !== null && Object.prototype.toString.call(obj) === '[object Object]';
 };
 
-export const strictDeepEqual = (first: JSONValue, second: JSONValue): boolean => {
+export const strictDeepEqual = (first: unknown, second: unknown): boolean => {
   if (first === second) {
     return true;
   }
-  const firstType = Object.prototype.toString.call(first);
-  if (firstType !== Object.prototype.toString.call(second)) {
+  if (typeof first !== typeof second) {
     return false;
   }
-  if (Array.isArray(first)) {
-    if (first.length !== (second as JSONArray).length) {
+  if (Array.isArray(first) && Array.isArray(second)) {
+    if (first.length !== second.length) {
       return false;
     }
     for (let i = 0; i < first.length; i += 1) {
-      if (!strictDeepEqual(first[i], (second as JSONArray)[i])) {
+      if (!strictDeepEqual(first[i], second)[i]) {
         return false;
       }
     }
     return true;
   }
-  if (isObject(first as JSONValue)) {
-    const keysSeen = {};
-    for (const key in first as JSONObject) {
-      if (Object.hasOwnProperty.call(first, key)) {
-        if (!strictDeepEqual((first as JSONObject)[key], (second as JSONObject)[key])) {
-          return false;
-        }
-        keysSeen[key] = true;
-      }
+  if (isObject(first) && isObject(second)) {
+    const firstEntries = Object.entries(first);
+    const secondKeys = new Set(Object.keys(second));
+    if (firstEntries.length !== secondKeys.size) {
+      return false;
     }
-    for (const key2 in second as JSONObject) {
-      if (Object.hasOwnProperty.call(second, key2)) {
-        if (keysSeen[key2] !== true) {
-          return false;
-        }
+    for (const [key, value] of firstEntries) {
+      if (!strictDeepEqual(value, second[key])) {
+        return false;
       }
+      secondKeys.delete(key);
     }
-    return true;
+    return secondKeys.size === 0;
   }
   return false;
 };
 
-export const isFalse = (obj: JSONValue): boolean => {
+export const isFalse = (obj: unknown): boolean => {
   if (obj === '' || obj === false || obj === null || obj === undefined) {
     return true;
   }
   if (Array.isArray(obj) && obj.length === 0) {
     return true;
   }
-  if (isObject(obj as JSONValue)) {
-    for (const key in obj as JSONObject) {
-      if ((obj as JSONObject).hasOwnProperty(key)) {
+  if (isObject(obj)) {
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
         return false;
       }
     }
