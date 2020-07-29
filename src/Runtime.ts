@@ -1,16 +1,37 @@
 import { TreeInterpreter } from './TreeInterpreter';
-import {
-  Token,
-  JSONValue,
-  JSONObject,
-  FunctionTable,
-  InputArgument,
-  InputSignature,
-  RuntimeFunction,
-  JSONArray,
-  ExpressionNode,
-} from './typings';
+import { Token, ExpressionNode } from './Lexer';
+
 import { isObject } from './utils';
+import { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
+
+export enum InputArgument {
+  TYPE_NUMBER = 0,
+  TYPE_ANY = 1,
+  TYPE_STRING = 2,
+  TYPE_ARRAY = 3,
+  TYPE_OBJECT = 4,
+  TYPE_BOOLEAN = 5,
+  TYPE_EXPREF = 6,
+  TYPE_NULL = 7,
+  TYPE_ARRAY_NUMBER = 8,
+  TYPE_ARRAY_STRING = 9,
+}
+
+export interface InputSignature {
+  types: InputArgument[];
+  variadic?: boolean;
+}
+
+export type RuntimeFunction<T, U> = (resolvedArgs: T) => U;
+
+export interface FunctionSignature {
+  _func: RuntimeFunction<any, any>;
+  _signature: InputSignature[];
+}
+
+export interface FunctionTable {
+  [functionName: string]: FunctionSignature;
+}
 
 export class Runtime {
   _interpreter?: TreeInterpreter;
@@ -144,7 +165,7 @@ export class Runtime {
       case '[object Null]':
         return InputArgument.TYPE_NULL;
       case '[object Object]':
-        if ((obj as JSONObject).jmespathType === Token.TOK_EXPREF) {
+        if ((obj as ObjectDict).jmespathType === Token.TOK_EXPREF) {
           return InputArgument.TYPE_EXPREF;
         }
         return InputArgument.TYPE_OBJECT;
@@ -214,9 +235,9 @@ export class Runtime {
 
   private functionLength: RuntimeFunction<[string | JSONArray | JSONObject], number> = ([inputValue]) => {
     if (!isObject(inputValue)) {
-      return (inputValue as string | JSONArray).length;
+      return inputValue.length;
     }
-    return Object.keys(inputValue as JSONObject).length;
+    return Object.keys(inputValue).length;
   };
 
   private functionMap = (resolvedArgs: any[]) => {
@@ -446,7 +467,6 @@ export class Runtime {
     return Object.values(inputObject);
   };
 
-  /* eslint-disable @typescript-eslint/camelcase */
   private functionTable: FunctionTable = {
     abs: {
       _func: this.functionAbs,
@@ -683,5 +703,4 @@ export class Runtime {
       ],
     },
   };
-  /* eslint-enable @typescript-eslint/camelcase */
 }

@@ -1,49 +1,48 @@
-export const isObject = (obj: any): boolean => {
+export const isObject = (obj: unknown): obj is Record<string, unknown> => {
   return obj !== null && Object.prototype.toString.call(obj) === '[object Object]';
 };
 
-export const strictDeepEqual = (first: any, second: any): boolean => {
+export const strictDeepEqual = (first: unknown, second: unknown): boolean => {
+  console.info('strictDeepEqual', first, second);
   if (first === second) {
     return true;
   }
-  const firstType = Object.prototype.toString.call(first);
-  if (firstType !== Object.prototype.toString.call(second)) {
+  if (typeof first !== typeof second) {
+    console.info('[NOT HERE - 1]', typeof first, typeof second);
     return false;
   }
-  if (Array.isArray(first)) {
+  if (Array.isArray(first) && Array.isArray(second)) {
     if (first.length !== second.length) {
+      console.info('[NOT HERE - 2]', first.length, second.length);
+
       return false;
     }
     for (let i = 0; i < first.length; i += 1) {
       if (!strictDeepEqual(first[i], second[i])) {
+        console.info('[NOT HERE - 2]', first.length, second.length);
         return false;
       }
     }
     return true;
   }
-  if (isObject(first)) {
-    const keysSeen = {};
-    for (const key in first) {
-      if (Object.hasOwnProperty.call(first, key)) {
-        if (!strictDeepEqual(first[key], second[key])) {
-          return false;
-        }
-        keysSeen[key] = true;
-      }
+  if (isObject(first) && isObject(second)) {
+    const firstEntries = Object.entries(first);
+    const secondKeys = new Set(Object.keys(second));
+    if (firstEntries.length !== secondKeys.size) {
+      return false;
     }
-    for (const key2 in second) {
-      if (Object.hasOwnProperty.call(second, key2)) {
-        if (keysSeen[key2] !== true) {
-          return false;
-        }
+    for (const [key, value] of firstEntries) {
+      if (!strictDeepEqual(value, second[key])) {
+        return false;
       }
+      secondKeys.delete(key);
     }
-    return true;
+    return secondKeys.size === 0;
   }
   return false;
 };
 
-export const isFalse = (obj: any): boolean => {
+export const isFalse = (obj: unknown): boolean => {
   if (obj === '' || obj === false || obj === null || obj === undefined) {
     return true;
   }
@@ -59,15 +58,6 @@ export const isFalse = (obj: any): boolean => {
     return true;
   }
   return false;
-};
-
-export const objValues = (obj: any): any[] => {
-  const keys = Object.keys(obj);
-  const values = [];
-  for (let i = 0; i < keys.length; i += 1) {
-    values.push(obj[keys[i]]);
-  }
-  return values;
 };
 
 export const trimLeft: (str: string) => string =

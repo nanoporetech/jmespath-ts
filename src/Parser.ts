@@ -6,9 +6,9 @@ import {
   KeyValuePairNode,
   LexerToken,
   ValueNode,
-  Node,
+  ASTNode,
   Token,
-} from './typings';
+} from './Lexer';
 import Lexer from './Lexer';
 
 const bindingPower: { [token: string]: number } = {
@@ -50,7 +50,7 @@ class TokenParser {
     const ast = this.expression(0);
     if (this.lookahead(0) !== Token.TOK_EOF) {
       const token = this.lookaheadToken(0);
-      this.errorToken(token, `Unexpected token type: ${token.type}, value: ${token.value}`);
+      this.errorToken(token, `Unexpected token type: ${token.type}, value: ${token.value as string}`);
     }
     return ast;
   }
@@ -110,7 +110,7 @@ class TokenParser {
           this.parseProjectionRHS(bindingPower.Star);
         return { type: 'ValueProjection', children: [left, right] } as ExpressionNode;
       case Token.TOK_FILTER:
-        return this.led(token.type, { type: 'Identity' } as Node);
+        return this.led(token.type, { type: 'Identity' } as ASTNode);
       case Token.TOK_LBRACE:
         return this.parseMultiselectHash();
       case Token.TOK_FLATTEN:
@@ -141,7 +141,7 @@ class TokenParser {
         const args: ExpressionNodeTree[] = [];
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
           if (this.lookahead(0) === Token.TOK_CURRENT) {
-            expression = { type: Token.TOK_CURRENT } as Node;
+            expression = { type: Token.TOK_CURRENT } as ASTNode;
             this.advance();
           } else {
             expression = this.expression(0);
@@ -179,11 +179,11 @@ class TokenParser {
         return { type: 'AndExpression', children: [left, right] } as ExpressionNode;
       case Token.TOK_LPAREN:
         const name = (left as FieldNode).name;
-        const args: (ExpressionNodeTree | Node)[] = [];
+        const args: (ExpressionNodeTree | ASTNode)[] = [];
         let expression;
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
           if (this.lookahead(0) === Token.TOK_CURRENT) {
-            expression = { type: Token.TOK_CURRENT } as Node;
+            expression = { type: Token.TOK_CURRENT } as ASTNode;
             this.advance();
           } else {
             expression = this.expression(0);
@@ -236,12 +236,12 @@ class TokenParser {
       return;
     } else {
       const token = this.lookaheadToken(0);
-      this.errorToken(token, `Expected ${tokenType}, got: ${token.type}`);
+      this.errorToken(token, `Expected ${tokenType as string}, got: ${token.type}`);
     }
   }
 
   private errorToken(token: LexerToken, message = ''): never {
-    const error = new Error(message || `Invalid token (${token.type}): "${token.value}"`);
+    const error = new Error(message || `Invalid token (${token.type}): "${token.value as string}"`);
     error.name = 'ParserError';
     throw error;
   }
@@ -283,7 +283,7 @@ class TokenParser {
         this.advance();
       } else {
         const token = this.lookaheadToken(0);
-        this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
+        this.errorToken(token, `Syntax error, unexpected token: ${token.value as string}(${token.type})`);
       }
       currentTokenType = this.lookahead(0);
     }
@@ -314,7 +314,7 @@ class TokenParser {
       return this.parseMultiselectHash();
     }
     const token = this.lookaheadToken(0);
-    this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
+    this.errorToken(token, `Syntax error, unexpected token: ${token.value as string}(${token.type})`);
   }
 
   private parseProjectionRHS(rbp: number): ExpressionNodeTree {
@@ -332,7 +332,7 @@ class TokenParser {
       return this.parseDotRHS(rbp);
     }
     const token = this.lookaheadToken(0);
-    this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
+    this.errorToken(token, `Syntax error, unexpected token: ${token.value as string}(${token.type})`);
   }
 
   private parseMultiselectList(): ExpressionNode {

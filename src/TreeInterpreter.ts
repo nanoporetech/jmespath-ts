@@ -1,15 +1,15 @@
 import {
   Token,
-  JSONValue,
   ExpressionNodeTree,
   FieldNode,
   ExpressionNode,
   ValueNode,
   ComparitorNode,
   KeyValuePairNode,
-} from './typings';
-import { isFalse, objValues, isObject, strictDeepEqual } from './utils';
+} from './Lexer';
+import { isFalse, isObject, strictDeepEqual } from './utils';
 import { Runtime } from './Runtime';
+import { JSONValue } from '.';
 
 export class TreeInterpreter {
   runtime: Runtime;
@@ -110,7 +110,7 @@ export class TreeInterpreter {
           return null;
         }
         collected = [];
-        const values = objValues(base);
+        const values = Object.values(base);
         for (i = 0; i < values.length; i += 1) {
           current = this.visit((node as ExpressionNode).children[1], values[i]);
           if (current !== null) {
