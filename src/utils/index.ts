@@ -3,23 +3,18 @@ export const isObject = (obj: unknown): obj is Record<string, unknown> => {
 };
 
 export const strictDeepEqual = (first: unknown, second: unknown): boolean => {
-  console.info('strictDeepEqual', first, second);
   if (first === second) {
     return true;
   }
   if (typeof first !== typeof second) {
-    console.info('[NOT HERE - 1]', typeof first, typeof second);
     return false;
   }
   if (Array.isArray(first) && Array.isArray(second)) {
     if (first.length !== second.length) {
-      console.info('[NOT HERE - 2]', first.length, second.length);
-
       return false;
     }
     for (let i = 0; i < first.length; i += 1) {
       if (!strictDeepEqual(first[i], second[i])) {
-        console.info('[NOT HERE - 2]', first.length, second.length);
         return false;
       }
     }
