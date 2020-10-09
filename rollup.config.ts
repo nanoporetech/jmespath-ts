@@ -12,9 +12,9 @@ const libraryName = 'jmespath';
 export default {
   input: `src/index.ts`,
   output: [
-    { file: pkg.main, name: libraryName, format: 'umd', exports: 'named', sourcemap: true },
+    { file: pkg.main, name: libraryName, format: 'umd', exports: 'named', sourcemap: false },
     { file: pkg.main.replace('umd.js', 'umd.min.js'), name: libraryName, format: 'umd', exports: 'named', sourcemap: true, plugins: [terser()] },
-    { file: pkg.module, format: 'esm', exports: 'named', sourcemap: true },
+    { file: pkg.module, format: 'esm', exports: 'named', sourcemap: false },
     { file: pkg.module.replace('esm.js', 'esm.min.js'), format: 'esm', exports: 'named', sourcemap: true, plugins: [terser()] },
   ],
   // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
