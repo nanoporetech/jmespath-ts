@@ -1,7 +1,7 @@
 {
   "name": "@metrichor/jmespath",
   "description": "Typescript implementation of the JMESPath spec (100% compliant)",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": {
     "name": "Oxford Nanopore Technologies",
     "email": "support@nanoporetech.com",

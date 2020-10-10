@@ -77,9 +77,6 @@ export class Runtime {
       if ('variadic' in signature[i] && i !== signature.length - 1) {
         throw new Error(`ArgumentError: ${name}() 'variadic' argument ${i + 1} must occur last`);
       }
-      if ('variadic' in signature[i] && 'optional' in signature[i]) {
-        throw new Error(`ArgumentError: ${name}() 'variadic' argument ${i + 1} cannot also be 'optional'`);
-      }
     }
   }
 

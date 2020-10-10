@@ -287,7 +287,7 @@ describe('registerFunction', () => {
         },
         'optionalVariadic(foo)',
       ),
-    ).toThrow("ArgumentError: optionalVariadic() 'variadic' argument 1 cannot also be 'optional'");
+    ).not.toThrow();
   });
 
   it('alerts variadic is always last argument', () => {
