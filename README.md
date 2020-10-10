@@ -88,32 +88,6 @@ search(JSON_DOCUMENT, "foo[?age > `30`]");
 // OUTPUTS: [ { age: 35 }, { age: 40 } ]
 ```
 
-
-### `registerFunction(functionName: string, customFunction: RuntimeFunction, signature: InputSignature[]): void`
-
-Extend the list of built in JMESpath expressions with your own functions.
-
-```javascript
-  import {search, registerFunction, TYPE_NUMBER} from '@metrichor/jmespath'
-
-
-  search({ foo: 60, bar: 10 }, 'divide(foo, bar)')
-  // THROWS ERROR: Error: Unknown function: divide()
-
-  registerFunction(
-    'divide', // FUNCTION NAME
-    (resolvedArgs) => {   // CUSTOM FUNCTION
-      const [dividend, divisor] = resolvedArgs;
-      return dividend / divisor;
-    },
-    [{ types: [TYPE_NUMBER] }, { types: [TYPE_NUMBER] }] //SIGNATURE
-  );
-
-  search({ foo: 60,bar: 10 }, 'divide(foo, bar)');
-  // OUTPUTS: 6
-
-```
-
 ### `compile(expression: string): ExpressionNodeTree`
 
 You can precompile all your expressions ready for use later on. the `compile`
@@ -129,6 +103,58 @@ TreeInterpreter.search(ast, {foo: {bar: 'BAZ'}})
 // RETURNS: "BAZ"
 
 ```
+
+---
+## EXTENSIONS TO ORIGINAL SPEC
+
+1. ### Register you own custom functions
+
+    #### `registerFunction(functionName: string, customFunction: RuntimeFunction, signature: InputSignature[]): void`
+
+    Extend the list of built in JMESpath expressions with your own functions.
+
+    ```javascript
+      import {search, registerFunction, TYPE_NUMBER} from '@metrichor/jmespath'
+
+
+      search({ foo: 60, bar: 10 }, 'divide(foo, bar)')
+      // THROWS ERROR: Error: Unknown function: divide()
+
+      registerFunction(
+        'divide', // FUNCTION NAME
+        (resolvedArgs) => {   // CUSTOM FUNCTION
+          const [dividend, divisor] = resolvedArgs;
+          return dividend / divisor;
+        },
+        [{ types: [TYPE_NUMBER] }, { types: [TYPE_NUMBER] }] //SIGNATURE
+      );
+
+      search({ foo: 60,bar: 10 }, 'divide(foo, bar)');
+      // OUTPUTS: 6
+
+    ```
+
+    Optional arguments are supported by setting `{..., optional: true}` in argument signatures
+
+
+    ```javascript
+
+      registerFunction(
+        'divide',
+        (resolvedArgs) => {
+          const [dividend, divisor] = resolvedArgs;
+          return dividend / divisor ?? 1; //OPTIONAL DIVISOR THAT DEFAULTS TO 1
+        },
+        [{ types: [TYPE_NUMBER] }, { types: [TYPE_NUMBER], optional: true }] //SIGNATURE
+      );
+
+      search({ foo: 60, bar: 10 }, 'divide(foo)');
+      // OUTPUTS: 60
+
+    ```
+
+2. ### Root value access with `$` symbol
+
 
 
 ## More Resources
