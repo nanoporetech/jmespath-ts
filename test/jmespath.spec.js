@@ -349,3 +349,25 @@ describe('registerFunction', () => {
     ).toThrow('ArgumentError: optionalArgs() takes 1 arguments but received 3');
   });
 });
+
+describe('root', () => {
+  it('$ should give access to the root value', () => {
+    var value = search({ foo: { bar: 1 } }, 'foo.{ value: $.foo.bar }');
+    expect(value.value).toBe(1);
+  });
+  it('$ should give access to the root value after pipe', () => {
+    var value = search({ foo: { bar: 1 } }, 'foo | $.foo.bar');
+    expect(value).toEqual(1);
+  });
+  it('$ should give access in expressions', () => {
+    var value = search([{ foo: { bar: 1 } }, { foo: { bar: 99 } }], 'map(&foo.{boo: bar, root: $}, @)');
+    expect(value).toEqual([
+      { boo: 1, root: [{ foo: { bar: 1 } }, { foo: { bar: 99 } }] },
+      { boo: 99, root: [{ foo: { bar: 1 } }, { foo: { bar: 99 } }] },
+    ]);
+  });
+  it('$ can be used in parallel', () => {
+    var value = search([{ foo: { bar: 1 } }, { foo: { bar: 99 } }], '[$[0].foo.bar, $[1].foo.bar]');
+    expect(value).toEqual([1, 99]);
+  });
+});

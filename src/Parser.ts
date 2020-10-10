@@ -22,6 +22,7 @@ const bindingPower: { [token: string]: number } = {
   [Token.TOK_NUMBER]: 0,
   [Token.TOK_CURRENT]: 0,
   [Token.TOK_EXPREF]: 0,
+  [Token.TOK_ROOT]: 0,
   [Token.TOK_PIPE]: 1,
   [Token.TOK_OR]: 2,
   [Token.TOK_AND]: 3,
@@ -134,6 +135,8 @@ class TokenParser {
         return this.parseMultiselectList();
       case Token.TOK_CURRENT:
         return { type: Token.TOK_CURRENT };
+      case Token.TOK_ROOT:
+        return { type: Token.TOK_ROOT };
       case Token.TOK_EXPREF:
         expression = this.expression(bindingPower.Expref);
         return { type: 'ExpressionReference', children: [expression] } as ExpressionNode;
