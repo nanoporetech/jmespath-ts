@@ -102,11 +102,9 @@ export class Runtime {
     let currentSpec: InputArgument[];
     let actualType: InputArgument;
     let typeMatched: boolean;
-    let isOptional: boolean;
     for (let i = 0; i < signature.length; i += 1) {
       typeMatched = false;
       currentSpec = signature[i].types;
-      isOptional = signature[i].optional ?? false;
       actualType = this.getTypeName(args[i]) as InputArgument;
       let j: number;
       for (j = 0; j < currentSpec.length; j += 1) {
@@ -115,7 +113,7 @@ export class Runtime {
           break;
         }
       }
-      if (!typeMatched && !isOptional) {
+      if (!typeMatched && actualType !== undefined) {
         const expected = currentSpec
           .map((typeIdentifier): string => {
             return this.TYPE_NAME_TABLE[typeIdentifier];

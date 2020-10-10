@@ -240,7 +240,7 @@ describe('registerFunction', () => {
       () => {
         /* EMPTY FUNCTION */
       },
-      [{ types: [jmespath.TYPE_ANY] }],
+      [{ types: [jmespath.TYPE_ANY] }, { types: [jmespath.TYPE_NUMBER], optional: true }],
     );
     expect(() =>
       search(
@@ -250,7 +250,25 @@ describe('registerFunction', () => {
         },
         'tooFewArgs()',
       ),
-    ).toThrow('ArgumentError: tooFewArgs() takes 1 argument but received 0');
+    ).toThrow('ArgumentError: tooFewArgs() takes 1 arguments but received 0');
+    expect(() =>
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'tooFewArgs(foo, @)',
+      ),
+    ).toThrow('TypeError: tooFewArgs() expected argument 2 to be type (number) but received type object instead.');
+    expect(() =>
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'tooFewArgs(foo, `2`, @)',
+      ),
+    ).toThrow('ArgumentError: tooFewArgs() takes 1 arguments but received 3');
   });
   it('alerts too many arguments', () => {
     registerFunction(
