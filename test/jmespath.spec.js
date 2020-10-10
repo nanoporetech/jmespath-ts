@@ -234,4 +234,118 @@ describe('registerFunction', () => {
       ),
     ).toThrow('Function already defined: sum()');
   });
+  it('alerts too few arguments', () => {
+    registerFunction(
+      'tooFewArgs',
+      () => {
+        /* EMPTY FUNCTION */
+      },
+      [{ types: [jmespath.TYPE_ANY] }],
+    );
+    expect(() =>
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'tooFewArgs()',
+      ),
+    ).toThrow('ArgumentError: tooFewArgs() takes 1 argument but received 0');
+  });
+  it('alerts too many arguments', () => {
+    registerFunction(
+      'tooManyArgs',
+      () => {
+        /* EMPTY FUNCTION */
+      },
+      [],
+    );
+    expect(() =>
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'tooManyArgs(foo)',
+      ),
+    ).toThrow('ArgumentError: tooManyArgs() takes 0 argument but received 1');
+  });
+
+  it('alerts optional variadic arguments', () => {
+    registerFunction(
+      'optionalVariadic',
+      () => {
+        /* EMPTY FUNCTION */
+      },
+      [{ types: [jmespath.TYPE_ANY], optional: true, variadic: true }],
+    );
+    expect(() =>
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'optionalVariadic(foo)',
+      ),
+    ).toThrow("ArgumentError: optionalVariadic() 'variadic' argument 1 cannot also be 'optional'");
+  });
+
+  it('alerts variadic is always last argument', () => {
+    registerFunction(
+      'variadicAlwaysLast',
+      () => {
+        /* EMPTY FUNCTION */
+      },
+      [
+        { types: [jmespath.TYPE_ANY], variadic: true },
+        { types: [jmespath.TYPE_ANY], optional: true },
+      ],
+    );
+    expect(() =>
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'variadicAlwaysLast(foo)',
+      ),
+    ).toThrow("ArgumentError: variadicAlwaysLast() 'variadic' argument 1 must occur last");
+  });
+
+  it('accounts for optional arguments', () => {
+    registerFunction(
+      'optionalArgs',
+      ([first, second, third]) => {
+        return { first, second: second ?? 'default[2]', third: third ?? 'default[3]' };
+      },
+      [{ types: [jmespath.TYPE_ANY] }, { types: [jmespath.TYPE_ANY], optional: true }],
+    );
+    expect(
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'optionalArgs(foo)',
+      ),
+    ).toEqual({ first: 60, second: 'default[2]', third: 'default[3]' });
+    expect(
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'optionalArgs(foo, bar)',
+      ),
+    ).toEqual({ first: 60, second: 10, third: 'default[3]' });
+    expect(() =>
+      search(
+        {
+          foo: 60,
+          bar: 10,
+        },
+        'optionalArgs(foo, bar, [foo, bar])',
+      ),
+    ).toThrow('ArgumentError: optionalArgs() takes 1 arguments but received 3');
+  });
 });
