@@ -155,6 +155,13 @@ TreeInterpreter.search(ast, {foo: {bar: 'BAZ'}})
 
 2. ### Root value access with `$` symbol
 
+```javascript
+
+search({foo: {bar: 999}, baz: [1, 2, 3]}, '$.baz[*].[@, $.foo.bar]')
+
+// OUTPUTS:
+// [ [ 1, 999 ], [ 2, 999 ], [ 3, 999 ] ]
+```
 
 
 ## More Resources
