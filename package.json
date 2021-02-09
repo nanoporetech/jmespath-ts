@@ -41,7 +41,7 @@
     "lint:fix": "npm run lint -- --fix",
     "prebuild": "rimraf dist",
     "perf": "node scripts/perf.js",
-    "build": "tsc --outDir dist/lib -d --module commonjs --declarationDir dist/types && rollup -c rollup.config.ts",
+    "build": "tsc --outDir dist/lib -d --module commonjs && rollup -c rollup.config.ts",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
