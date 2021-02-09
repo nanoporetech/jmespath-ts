@@ -1,5 +1,5 @@
-import { isAlpha, isNum, isAlphaNum, trimLeft } from './utils';
-import { JSONValue } from '.';
+import { isAlpha, isNum, isAlphaNum } from './utils/index';
+import type { JSONValue } from './index';
 
 export enum Token {
   TOK_EOF = 'EOF',
@@ -34,7 +34,7 @@ export enum Token {
   TOK_LITERAL = 'Literal',
 }
 
-export type LexerTokenValue = string | number | JSONValue;
+export type LexerTokenValue = JSONValue;
 
 export interface LexerToken {
   type: Token;
@@ -67,7 +67,7 @@ export interface ComparitorNode extends ExpressionNode {
 
 export type ExpressionNodeTree = ASTNode | ExpressionNode | FieldNode | ValueNode;
 
-export const basicTokens = {
+export const basicTokens: Record<string, Token> = {
   '(': Token.TOK_LPAREN,
   ')': Token.TOK_RPAREN,
   '*': Token.TOK_STAR,
@@ -81,14 +81,14 @@ export const basicTokens = {
   '}': Token.TOK_RBRACE,
 };
 
-const operatorStartToken = {
+const operatorStartToken: Record<string, boolean> = {
   '!': true,
   '<': true,
   '=': true,
   '>': true,
 };
 
-const skipChars = {
+const skipChars: Record<string, boolean> = {
   '\t': true,
   '\n': true,
   '\r': true,
@@ -116,7 +116,7 @@ class StreamLexer {
       } else if (basicTokens[stream[this._current]] !== undefined) {
         tokens.push({
           start: this._current,
-          type: basicTokens[stream[this._current]] as Token,
+          type: basicTokens[stream[this._current]],
           value: stream[this._current],
         });
         this._current += 1;
@@ -296,7 +296,7 @@ class StreamLexer {
       }
       this._current = current;
     }
-    let literalString = trimLeft(stream.slice(start, this._current));
+    let literalString = stream.slice(start, this._current).trimLeft();
     literalString = literalString.replace('\\`', '`');
     const literal: JSONValue = this.looksLikeJSON(literalString)
       ? (JSON.parse(literalString) as JSONValue)

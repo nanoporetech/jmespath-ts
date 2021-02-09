@@ -1,8 +1,9 @@
-import { TreeInterpreter } from './TreeInterpreter';
-import { Token, ExpressionNode } from './Lexer';
+import type { TreeInterpreter } from './TreeInterpreter';
+import type { ExpressionNode } from './Lexer';
+import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
+import { Token } from './Lexer';
 
 import { isObject } from './utils';
-import { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
 
 export enum InputArgument {
   TYPE_NUMBER = 0,
@@ -188,7 +189,9 @@ export class Runtime {
     exprefNode: ExpressionNode,
     allowedTypes: InputArgument[],
   ): ((x: JSONValue) => JSONValue) | undefined {
-    if (!this._interpreter) return;
+    if (!this._interpreter) {
+      return;
+    }
     const interpreter = this._interpreter;
     const keyFunc = (x: JSONValue): JSONValue => {
       const current = interpreter.visit(exprefNode, x) as JSONValue;
@@ -249,8 +252,10 @@ export class Runtime {
     return Object.keys(inputValue).length;
   };
 
-  private functionMap = (resolvedArgs: any[]) => {
-    if (!this._interpreter) return [];
+  private functionMap = (resolvedArgs: any[]): any[] => {
+    if (!this._interpreter) {
+      return [];
+    }
     const mapped = [];
     const interpreter = this._interpreter;
     const exprefNode = resolvedArgs[0];
@@ -262,7 +267,9 @@ export class Runtime {
   };
 
   private functionMax: RuntimeFunction<[(string | number)[]], string | number | null> = ([inputValue]) => {
-    if (!inputValue.length) return null;
+    if (!inputValue.length) {
+      return null;
+    }
 
     const typeName = this.getTypeName(inputValue[0]);
     if (typeName === InputArgument.TYPE_NUMBER) {
@@ -309,7 +316,9 @@ export class Runtime {
   };
 
   private functionMin: RuntimeFunction<[(string | number)[]], string | number | null> = ([inputValue]) => {
-    if (!inputValue.length) return null;
+    if (!inputValue.length) {
+      return null;
+    }
 
     const typeName = this.getTypeName(inputValue[0]);
     if (typeName === InputArgument.TYPE_NUMBER) {
@@ -343,7 +352,7 @@ export class Runtime {
     return minRecord;
   };
 
-  private functionNotNull = (resolvedArgs: any[]) => {
+  private functionNotNull = (resolvedArgs: any[]): JSONValue => {
     for (let i = 0; i < resolvedArgs.length; i += 1) {
       if (this.getTypeName(resolvedArgs[i]) !== InputArgument.TYPE_NULL) {
         return resolvedArgs[i];
@@ -372,7 +381,9 @@ export class Runtime {
   };
 
   private functionSortBy = (resolvedArgs: [number[] | string[], ExpressionNode]): number[] | string[] => {
-    if (!this._interpreter) return [];
+    if (!this._interpreter) {
+      return [];
+    }
     const sortedArray = resolvedArgs[0].slice(0);
     if (sortedArray.length === 0) {
       return sortedArray;

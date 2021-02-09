@@ -55,16 +55,6 @@ export const isFalse = (obj: unknown): boolean => {
   return false;
 };
 
-export const trimLeft: (str: string) => string =
-  typeof String.prototype.trimLeft === 'function'
-    ? (str: string): string => {
-        return str.trimLeft();
-      }
-    : (str: string): string => {
-        const match = /^\s*(.*)/.exec(str);
-        return (match && match[1]) as string;
-      };
-
 export const isAlpha = (ch: string): boolean => {
   // tslint:disable-next-line: strict-comparisons
   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_';

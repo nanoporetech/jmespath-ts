@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { readdirSync, statSync, readFileSync } from 'fs';
 import { basename } from 'path';
 import { search } from '../src';
@@ -10,18 +11,6 @@ function endsWith(str, suffix) {
   return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
-const listing = readdirSync('test/compliance');
-for (let i = 0; i < listing.length; i++) {
-  const filename = 'test/compliance/' + listing[i];
-  if (statSync(filename).isFile() && endsWith(filename, '.json') && !notImplementedYet.includes(basename(filename))) {
-    addTestSuitesFromFile(filename);
-  }
-}
-
-/**
- *
- * @param {string} filename
- */
 function addTestSuitesFromFile(filename) {
   describe(filename, () => {
     const spec = JSON.parse(readFileSync(filename, 'utf-8'));
@@ -41,4 +30,12 @@ function addTestSuitesFromFile(filename) {
       });
     }
   });
+}
+
+const listing = readdirSync('test/compliance');
+for (let i = 0; i < listing.length; i++) {
+  const filename = 'test/compliance/' + listing[i];
+  if (statSync(filename).isFile() && endsWith(filename, '.json') && !notImplementedYet.includes(basename(filename))) {
+    addTestSuitesFromFile(filename);
+  }
 }
