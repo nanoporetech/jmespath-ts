@@ -1,4 +1,4 @@
-import jmespath, { search, tokenize, compile, registerFunction, TreeInterpreter } from '../src';
+import { search, tokenize, compile, TreeInterpreter } from '../src';
 import { strictDeepEqual } from '../src/utils';
 
 describe('tokenize', () => {
