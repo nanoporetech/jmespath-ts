@@ -7,11 +7,10 @@ import {
   LexerToken,
   ValueNode,
   ASTNode,
-  Token,
 } from './Lexer';
-import Lexer from './Lexer';
+import Lexer, { Token } from './Lexer';
 
-const bindingPower: { [token: string]: number } = {
+const bindingPower: Record<string, number> = {
   [Token.TOK_EOF]: 0,
   [Token.TOK_UNQUOTEDIDENTIFIER]: 0,
   [Token.TOK_QUOTEDIDENTIFIER]: 0,
@@ -45,13 +44,13 @@ const bindingPower: { [token: string]: number } = {
 class TokenParser {
   index = 0;
   tokens: LexerToken[] = [];
-  parse(expression: string): ExpressionNodeTree {
+  parse(expression: string): ASTNode {
     this.loadTokens(expression);
     this.index = 0;
     const ast = this.expression(0);
     if (this.lookahead(0) !== Token.TOK_EOF) {
       const token = this.lookaheadToken(0);
-      this.errorToken(token, `Unexpected token type: ${token.type}, value: ${token.value as string}`);
+      this.errorToken(token, `Unexpected token type: ${token.type}, value: ${token.value}`);
     }
     return ast;
   }
@@ -60,7 +59,7 @@ class TokenParser {
     this.tokens = [...Lexer.tokenize(expression), { type: Token.TOK_EOF, value: '', start: expression.length }];
   }
 
-  expression(rbp: number): ExpressionNodeTree {
+  expression(rbp: number): ASTNode {
     const leftToken = this.lookaheadToken(0);
     this.advance();
     let left = this.nud(leftToken);
@@ -85,7 +84,7 @@ class TokenParser {
     this.index += 1;
   }
 
-  nud(token: LexerToken): ExpressionNodeTree {
+  nud(token: LexerToken): ASTNode {
     let left;
     let right;
     let expression;
@@ -141,7 +140,7 @@ class TokenParser {
         expression = this.expression(bindingPower.Expref);
         return { type: 'ExpressionReference', children: [expression] } as ExpressionNode;
       case Token.TOK_LPAREN:
-        const args: ExpressionNodeTree[] = [];
+        const args: ASTNode[] = [];
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
           if (this.lookahead(0) === Token.TOK_CURRENT) {
             expression = { type: Token.TOK_CURRENT } as ASTNode;
@@ -165,28 +164,28 @@ class TokenParser {
         const rbp = bindingPower.Dot;
         if (this.lookahead(0) !== Token.TOK_STAR) {
           right = this.parseDotRHS(rbp);
-          return { type: 'Subexpression', children: [left, right] } as ExpressionNode;
+          return { type: 'Subexpression', children: [left, right] };
         }
         this.advance();
         right = this.parseProjectionRHS(rbp);
-        return { type: 'ValueProjection', children: [left, right] } as ExpressionNode;
+        return { type: 'ValueProjection', children: [left, right] };
 
       case Token.TOK_PIPE:
         right = this.expression(bindingPower.Pipe);
-        return { type: Token.TOK_PIPE, children: [left, right] } as ExpressionNode;
+        return { type: Token.TOK_PIPE, children: [left, right] };
       case Token.TOK_OR:
         right = this.expression(bindingPower.Or);
-        return { type: 'OrExpression', children: [left, right] } as ExpressionNode;
+        return { type: 'OrExpression', children: [left, right] };
       case Token.TOK_AND:
         right = this.expression(bindingPower.And);
-        return { type: 'AndExpression', children: [left, right] } as ExpressionNode;
+        return { type: 'AndExpression', children: [left, right] };
       case Token.TOK_LPAREN:
         const name = (left as FieldNode).name;
-        const args: (ExpressionNodeTree | ASTNode)[] = [];
-        let expression;
+        const args: ASTNode[] = [];
+        let expression: ASTNode;
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
           if (this.lookahead(0) === Token.TOK_CURRENT) {
-            expression = { type: Token.TOK_CURRENT } as ASTNode;
+            expression = { type: Token.TOK_CURRENT };
             this.advance();
           } else {
             expression = this.expression(0);
@@ -239,12 +238,12 @@ class TokenParser {
       return;
     } else {
       const token = this.lookaheadToken(0);
-      this.errorToken(token, `Expected ${tokenType as string}, got: ${token.type}`);
+      this.errorToken(token, `Expected ${tokenType}, got: ${token.type}`);
     }
   }
 
   private errorToken(token: LexerToken, message = ''): never {
-    const error = new Error(message || `Invalid token (${token.type}): "${token.value as string}"`);
+    const error = new Error(message || `Invalid token (${token.type}): "${token.value}"`);
     error.name = 'ParserError';
     throw error;
   }
@@ -262,13 +261,13 @@ class TokenParser {
     return node;
   }
 
-  private projectIfSlice(left: ExpressionNodeTree, right: ExpressionNodeTree): ExpressionNode {
+  private projectIfSlice(left: ASTNode, right: ASTNode): ExpressionNode {
     const indexExpr: ExpressionNode = { type: 'IndexExpression', children: [left, right] };
     if (right.type === 'Slice') {
       return {
         children: [indexExpr, this.parseProjectionRHS(bindingPower.Star)],
         type: 'Projection',
-      } as ExpressionNode;
+      };
     }
     return indexExpr;
   }
@@ -286,7 +285,7 @@ class TokenParser {
         this.advance();
       } else {
         const token = this.lookaheadToken(0);
-        this.errorToken(token, `Syntax error, unexpected token: ${token.value as string}(${token.type})`);
+        this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
       }
       currentTokenType = this.lookahead(0);
     }
@@ -297,12 +296,12 @@ class TokenParser {
     };
   }
 
-  private parseComparator(left: ExpressionNodeTree, comparator: Token): ComparitorNode {
+  private parseComparator(left: ASTNode, comparator: Token): ComparitorNode {
     const right = this.expression(bindingPower[comparator]);
     return { type: 'Comparator', name: comparator, children: [left, right] };
   }
 
-  private parseDotRHS(rbp: number): ExpressionNodeTree {
+  private parseDotRHS(rbp: number): ASTNode {
     const lookahead = this.lookahead(0);
     const exprTokens = [Token.TOK_UNQUOTEDIDENTIFIER, Token.TOK_QUOTEDIDENTIFIER, Token.TOK_STAR];
     if (exprTokens.includes(lookahead)) {
@@ -317,10 +316,10 @@ class TokenParser {
       return this.parseMultiselectHash();
     }
     const token = this.lookaheadToken(0);
-    this.errorToken(token, `Syntax error, unexpected token: ${token.value as string}(${token.type})`);
+    this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
   }
 
-  private parseProjectionRHS(rbp: number): ExpressionNodeTree {
+  private parseProjectionRHS(rbp: number): ASTNode {
     if (bindingPower[this.lookahead(0)] < 10) {
       return { type: 'Identity' };
     }
@@ -335,11 +334,11 @@ class TokenParser {
       return this.parseDotRHS(rbp);
     }
     const token = this.lookaheadToken(0);
-    this.errorToken(token, `Syntax error, unexpected token: ${token.value as string}(${token.type})`);
+    this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
   }
 
   private parseMultiselectList(): ExpressionNode {
-    const expressions: ExpressionNodeTree[] = [];
+    const expressions: ASTNode[] = [];
     while (this.lookahead(0) !== Token.TOK_RBRACKET) {
       const expression = this.expression(0);
       expressions.push(expression);
@@ -358,9 +357,8 @@ class TokenParser {
     const pairs: KeyValuePairNode[] = [];
     const identifierTypes = [Token.TOK_UNQUOTEDIDENTIFIER, Token.TOK_QUOTEDIDENTIFIER];
     let keyToken;
-    let keyName;
-    let value: ExpressionNodeTree;
-    let node: KeyValuePairNode;
+    let keyName: string;
+    let value: ASTNode;
     // tslint:disable-next-line: prettier
     for (;;) {
       keyToken = this.lookaheadToken(0);
@@ -371,8 +369,7 @@ class TokenParser {
       this.advance();
       this.match(Token.TOK_COLON);
       value = this.expression(0);
-      node = { value, type: 'KeyValuePair', name: keyName };
-      pairs.push(node);
+      pairs.push({ value, type: 'KeyValuePair', name: keyName });
       if (this.lookahead(0) === Token.TOK_COMMA) {
         this.match(Token.TOK_COMMA);
       } else if (this.lookahead(0) === Token.TOK_RBRACE) {

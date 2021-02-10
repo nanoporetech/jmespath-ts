@@ -1,5 +1,4 @@
-import {
-  Token,
+import type {
   ExpressionNodeTree,
   FieldNode,
   ExpressionNode,
@@ -8,8 +7,9 @@ import {
   KeyValuePairNode,
 } from './Lexer';
 import { isFalse, isObject, strictDeepEqual } from './utils';
+import { Token } from './Lexer';
 import { Runtime } from './Runtime';
-import { JSONValue } from '.';
+import type { JSONValue } from '.';
 
 export class TreeInterpreter {
   runtime: Runtime;
