@@ -1,4 +1,4 @@
-import {
+import type {
   ComparitorNode,
   ExpressionNode,
   ExpressionNodeTree,
@@ -8,7 +8,7 @@ import {
   ValueNode,
   ASTNode,
 } from './Lexer';
-import Lexer, { Token } from './Lexer';
+import { Lexer, Token } from './Lexer';
 
 const bindingPower: Record<string, number> = {
   [Token.TOK_EOF]: 0,
@@ -382,4 +382,3 @@ class TokenParser {
 }
 
 export const Parser = new TokenParser();
-export default Parser;

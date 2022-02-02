@@ -332,4 +332,3 @@ class StreamLexer {
 }
 
 export const Lexer = new StreamLexer();
-export default Lexer;
