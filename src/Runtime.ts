@@ -1,7 +1,7 @@
+import { ExpressionNode } from './AST.type';
+import { JSONArray, JSONObject, JSONValue, ObjectDict } from './JSON.type';
+import { Token } from './Lexer.type';
 import type { TreeInterpreter } from './TreeInterpreter';
-import type { ExpressionNode } from './Lexer';
-import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
-import { Token } from './Lexer';
 
 import { isObject } from './utils';
 
@@ -64,7 +64,7 @@ export class Runtime {
     };
   }
 
-  callFunction(name: string, resolvedArgs: any): unknown {
+  callFunction(name: string, resolvedArgs: any): JSONValue {
     const functionEntry = this.functionTable[name];
     if (functionEntry === undefined) {
       throw new Error(`Unknown function: ${name}()`);
