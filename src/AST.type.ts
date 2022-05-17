@@ -1,5 +1,4 @@
 import { JSONValue } from './JSON.type';
-import { Token } from './Lexer.type';
 
 export interface FieldNode {
   readonly type: 'Field';
@@ -100,4 +99,4 @@ export type ExpressionNode =
   | MultiSelectListNode
   | FunctionNode;
 
-export type ExpressionReference = { jmespathType: Token.TOK_EXPREF } & ExpressionNode;
+export type ExpressionReference = { expref: true } & ExpressionNode;

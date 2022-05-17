@@ -1,9 +1,6 @@
-import { ExpressionNode } from './AST.type';
-import { JSONArray, JSONObject, JSONValue, ObjectDict } from './JSON.type';
-import { Token } from './Lexer.type';
+import type { ExpressionNode } from './AST.type';
+import type { JSONArray, JSONObject, JSONValue, ObjectDict } from './JSON.type';
 import type { TreeInterpreter } from './TreeInterpreter';
-
-import { isObject } from './utils';
 
 export enum InputArgument {
   TYPE_NUMBER = 0,
@@ -175,7 +172,7 @@ export class Runtime {
       case '[object Null]':
         return InputArgument.TYPE_NULL;
       case '[object Object]':
-        if ((obj as ObjectDict).jmespathType === Token.TOK_EXPREF) {
+        if ((obj as ObjectDict).expref) {
           return InputArgument.TYPE_EXPREF;
         }
         return InputArgument.TYPE_OBJECT;
@@ -246,7 +243,7 @@ export class Runtime {
   };
 
   private functionLength: RuntimeFunction<[string | JSONArray | JSONObject], number> = ([inputValue]) => {
-    if (!isObject(inputValue)) {
+    if (typeof inputValue === 'string' || Array.isArray(inputValue)) {
       return inputValue.length;
     }
     return Object.keys(inputValue).length;
