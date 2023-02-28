@@ -1,6 +1,33 @@
 import { tokenize } from '../src';
 
 describe('tokenize', () => {
+  it('should tokenize root node reference', () => {
+    expect(tokenize('$')).toMatchObject([{ type: 'Root', value: '$', start: 0 }]);
+  });
+  it('should tokenize arithmetic + plus sign', () => {
+    expect(tokenize('+')).toMatchObject([{ type: 'Plus', value: '+', start: 0 }]);
+  });
+  it('should tokenize arithmetic - minus sign', () => {
+    expect(tokenize('-')).toMatchObject([{ type: 'Minus', value: '-', start: 0 }]);
+  });
+  it('should tokenize arithmetic − (U+2212) minus sign', () => {
+    expect(tokenize('−')).toMatchObject([{ type: 'Minus', value: '\u2212', start: 0 }]);
+  });
+  it('should tokenize arithmetic × (U+00D7) multiplication sign', () => {
+    expect(tokenize('×')).toMatchObject([{ type: 'Multiply', value: '\u00d7', start: 0 }]);
+  });
+  it('should tokenize arithmetic / division operator', () => {
+    expect(tokenize('/')).toMatchObject([{ type: 'Divide', value: '/', start: 0 }]);
+  });
+  it('should tokenize arithmetic ÷ (U+00F7) division sign', () => {
+    expect(tokenize('÷')).toMatchObject([{ type: 'Divide', value: '\u00f7', start: 0 }]);
+  });
+  it('should tokenize arithmetic % modulo operator', () => {
+    expect(tokenize('%')).toMatchObject([{ type: 'Modulo', value: '%', start: 0 }]);
+  });
+  it('should tokenize arithmetic // integer division operator', () => {
+    expect(tokenize('//')).toMatchObject([{ type: 'Div', value: '//', start: 0 }]);
+  });
   it('should tokenize unquoted identifier', () => {
     expect(tokenize('foo')).toMatchObject([{ type: 'UnquotedIdentifier', value: 'foo', start: 0 }]);
   });
@@ -78,6 +105,7 @@ describe('tokenize', () => {
   });
   it('should tokenize two char tokens without shared prefix', () => {
     expect(tokenize('==')).toMatchObject([{ type: 'EQ', value: '==', start: 0 }]);
+    expect(() => tokenize('=')).toThrowError('Unknown incomplete token: =');
   });
   it('should tokenize not equals', () => {
     expect(tokenize('!=')).toMatchObject([{ type: 'NE', value: '!=', start: 0 }]);
@@ -93,6 +121,9 @@ describe('tokenize', () => {
     ]);
   });
   it('should tokenize the OR token', () => {
+    expect(tokenize('||')).toMatchObject([
+      { type: 'Or', value: '||', start: 0 },
+    ]);
     expect(tokenize('a||b')).toMatchObject([
       { type: 'UnquotedIdentifier', value: 'a', start: 0 },
       { type: 'Or', value: '||', start: 1 },
