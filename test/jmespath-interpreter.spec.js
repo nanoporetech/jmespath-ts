@@ -1,10 +1,20 @@
 import { search, compile, TreeInterpreter } from '../src';
-import { strictDeepEqual } from '../src/utils';
+import { add, divide, strictDeepEqual } from '../src/utils';
 
 describe('Searches compiled ast', () => {
-  it('search a compiled expression', () => {
+  it('should evaluate sub-expression', () => {
     const ast = compile('foo.bar');
     expect(TreeInterpreter.search(ast, { foo: { bar: 'BAZ' } })).toEqual('BAZ');
+  });
+  it('should evaluate arithmetic addition', () => {
+    expect(TreeInterpreter.search(compile('foo+bar'), { foo: 40, bar: 2 })).toEqual(42);
+  });
+  it('should evaluate arithmetic multiplication', () => {
+    expect(TreeInterpreter.search(compile('foo\u00d7bar'), { foo: 40, bar: 2 })).toEqual(80);
+    expect(TreeInterpreter.search(compile('foo*bar'), { foo: 40, bar: 2 })).toEqual(80);
+  });
+  it('should evaluate unary arithmetic expressions', () => {
+    expect(TreeInterpreter.search(compile('\u2212 `3` - +`2`'), { })).toEqual(-5);
   });
 });
 
@@ -66,6 +76,30 @@ describe('strictDeepEqual', () => {
   });
   it('should handle nested objects that are not equal', () => {
     expect(strictDeepEqual({ a: { b: [1, 2] } }, { a: { b: [1, 4] } })).toStrictEqual(false);
+  });
+});
+
+describe('add', () => {
+  it('should add two JSON numbers', () => {
+    expect(add(40, 2)).toEqual(42);
+  });
+  it('should err while trying to add non JSON numbers', () => {
+    try {
+      add('one', 'two');
+      expect('evaluation succeeded').toEqual('evaluation failed');
+    } catch (e) {
+      expect(e.message).toContain('not-a-number');
+    }
+  });
+});
+describe('divide', () => {
+  it('should err while trying to divide by zero', () => {
+    try {
+      divide(0, 0);
+      expect('evaluation succeeded').toEqual('evaluation failed');
+    } catch (e) {
+      expect(e.message).toContain('not-a-number: divide by zero');
+    }
   });
 });
 

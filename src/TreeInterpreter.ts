@@ -1,12 +1,13 @@
 import type {
+  ArithmeticNode,
+  ComparitorNode,
+  ExpressionNode,
   ExpressionNodeTree,
   FieldNode,
-  ExpressionNode,
-  ValueNode,
-  ComparitorNode,
   KeyValuePairNode,
+  ValueNode,
 } from './Lexer';
-import { isFalse, isObject, strictDeepEqual } from './utils';
+import { add, sub, mul, divide, mod, div, isFalse, isObject, strictDeepEqual, ensureNumbers } from './utils';
 import { Token } from './Lexer';
 import { Runtime } from './Runtime';
 import type { JSONValue } from '.';
@@ -140,6 +141,48 @@ export class TreeInterpreter {
           }
         }
         return finalResults as JSONValue;
+      case 'Arithmetic': {
+        const first = this.visit((node as ExpressionNode).children[0], value) as JSONValue;
+        const second = this.visit((node as ExpressionNode).children[1], value) as JSONValue;
+        switch ((node as ArithmeticNode).operator) {
+          case Token.TOK_PLUS:
+            return add(first, second);
+
+          case Token.TOK_MINUS:
+            return sub(first, second);
+
+          case Token.TOK_MULTIPLY:
+          case Token.TOK_STAR:
+            return mul(first, second);
+
+          case Token.TOK_DIVIDE:
+            return divide(first, second);
+
+          case Token.TOK_MODULO:
+            return mod(first, second);
+
+          case Token.TOK_DIV:
+            return div(first, second);
+
+          default:
+            throw new Error(`Unknown arithmetic operator: ${(node as ArithmeticNode).operator}`);
+        }
+      }
+      case 'Unary': {
+        const operand = this.visit((node as ExpressionNode).children[0], value) as JSONValue;
+        switch ((node as ArithmeticNode).operator) {
+          case Token.TOK_PLUS:
+            ensureNumbers(operand);
+            return operand as number;
+
+          case Token.TOK_MINUS:
+            ensureNumbers(operand);
+            return - (operand as number);
+
+          default:
+            throw new Error(`Unknown arithmetic operator: ${(node as ArithmeticNode).operator}`);
+        }
+      }
       case 'Comparator':
         first = this.visit((node as ExpressionNode).children[0], value);
         second = this.visit((node as ExpressionNode).children[1], value);
