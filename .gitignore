@@ -10,3 +10,8 @@ compiled
 .awcache
 .rpt2_cache
 docs
+
+src/*\.js
+src/*\.js\.map
+src/utils/*\.js
+src/utils/*\.js\.map
