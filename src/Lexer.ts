@@ -70,6 +70,9 @@ export interface ExpressionNode<T = ExpressionNodeTree> extends ASTNode {
 export interface ComparitorNode extends ExpressionNode {
   name: Token;
 }
+export interface ArithmeticNode extends ExpressionNode {
+  operator: Token;
+}
 
 export type ExpressionNodeTree = ASTNode | ExpressionNode | FieldNode | ValueNode;
 
