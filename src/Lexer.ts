@@ -86,6 +86,8 @@ const operatorStartToken: Record<string, boolean> = {
   '<': true,
   '=': true,
   '>': true,
+  '&': true,
+  '|': true,
 };
 
 const skipChars: Record<string, boolean> = {
@@ -155,24 +157,6 @@ class StreamLexer {
         token && tokens.push(token);
       } else if (skipChars[stream[this._current]] !== undefined) {
         this._current += 1;
-      } else if (stream[this._current] === '&') {
-        start = this._current;
-        this._current += 1;
-        if (stream[this._current] === '&') {
-          this._current += 1;
-          tokens.push({ start, type: Token.TOK_AND, value: '&&' });
-        } else {
-          tokens.push({ start, type: Token.TOK_EXPREF, value: '&' });
-        }
-      } else if (stream[this._current] === '|') {
-        start = this._current;
-        this._current += 1;
-        if (stream[this._current] === '|') {
-          this._current += 1;
-          tokens.push({ start, type: Token.TOK_OR, value: '||' });
-        } else {
-          tokens.push({ start, type: Token.TOK_PIPE, value: '|' });
-        }
       } else {
         const error = new Error(`Unknown character: ${stream[this._current]}`);
         error.name = 'LexerError';
@@ -251,34 +235,37 @@ class StreamLexer {
     return { start, type: Token.TOK_LBRACKET, value: '[' };
   }
 
+  private consumeOrElse(stream: string, peek: string, token: Token, orElse: Token): LexerToken {
+    const start = this._current;
+    this._current += 1;
+    if (stream[this._current] === peek) {
+      this._current += 1;
+      return { start: start, type: orElse, value: stream.slice(start, this._current) };
+    }
+    if (token === Token.TOK_EOF) {
+      const error = new Error(`Unknown incomplete token: ${stream[start]}`);
+      error.name = 'LexerError';
+      throw error;
+    }
+    return { start: start, type: token, value: stream[start] };
+  }
+
   private consumeOperator(stream: string): LexerToken | void {
     const start = this._current;
     const startingChar = stream[start];
-    this._current += 1;
-    if (startingChar === '!') {
-      if (stream[this._current] === '=') {
-        this._current += 1;
-        return { start, type: Token.TOK_NE, value: '!=' };
-      }
-      return { start, type: Token.TOK_NOT, value: '!' };
-    }
-    if (startingChar === '<') {
-      if (stream[this._current] === '=') {
-        this._current += 1;
-        return { start, type: Token.TOK_LTE, value: '<=' };
-      }
-      return { start, type: Token.TOK_LT, value: '<' };
-    }
-    if (startingChar === '>') {
-      if (stream[this._current] === '=') {
-        this._current += 1;
-        return { start, type: Token.TOK_GTE, value: '>=' };
-      }
-      return { start, type: Token.TOK_GT, value: '>' };
-    }
-    if (startingChar === '=' && stream[this._current] === '=') {
-      this._current += 1;
-      return { start, type: Token.TOK_EQ, value: '==' };
+    switch (startingChar){
+      case '!':
+        return this.consumeOrElse(stream, '=', Token.TOK_NOT, Token.TOK_NE);
+      case '<':
+        return this.consumeOrElse(stream, '=', Token.TOK_LT, Token.TOK_LTE);
+      case '>':
+        return this.consumeOrElse(stream, '=', Token.TOK_GT, Token.TOK_GTE);
+      case '=':
+        return this.consumeOrElse(stream, '=', Token.TOK_EOF, Token.TOK_EQ);
+      case '&':
+        return this.consumeOrElse(stream, '&', Token.TOK_AND, Token.TOK_EXPREF);
+      case '|':
+        return this.consumeOrElse(stream, '|', Token.TOK_PIPE, Token.TOK_OR);
     }
   }
 
