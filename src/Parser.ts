@@ -1,4 +1,5 @@
 import {
+  ArithmeticNode,
   ComparitorNode,
   ExpressionNode,
   ExpressionNodeTree,
@@ -31,6 +32,12 @@ const bindingPower: Record<string, number> = {
   [Token.TOK_GTE]: 5,
   [Token.TOK_LTE]: 5,
   [Token.TOK_NE]: 5,
+  [Token.TOK_MINUS]: 6,
+  [Token.TOK_PLUS]: 6,
+  [Token.TOK_DIV]: 7,
+  [Token.TOK_DIVIDE]: 7,
+  [Token.TOK_MODULO]: 7,
+  [Token.TOK_MULTIPLY]: 7,
   [Token.TOK_FLATTEN]: 9,
   [Token.TOK_STAR]: 20,
   [Token.TOK_FILTER]: 21,
@@ -103,6 +110,12 @@ class TokenParser {
       case Token.TOK_NOT:
         right = this.expression(bindingPower.Not);
         return { type: 'NotExpression', children: [right] } as ExpressionNode;
+      case Token.TOK_MINUS:
+        right = this.expression(bindingPower.Minus)
+        return { type: 'Unary', operator: token.type, children: [right] } as ArithmeticNode;
+      case Token.TOK_PLUS:
+        right = this.expression(bindingPower.Plus)
+        return { type: 'Unary', operator: token.type, children: [right] } as ArithmeticNode;
       case Token.TOK_STAR:
         left = { type: 'Identity' };
         right =
@@ -157,7 +170,7 @@ class TokenParser {
     }
   }
 
-  led(tokenName: string, left: ExpressionNodeTree): ExpressionNode | ComparitorNode {
+  led(tokenName: string, left: ExpressionNodeTree): ExpressionNode | ArithmeticNode | ComparitorNode {
     let right: ExpressionNodeTree;
     switch (tokenName) {
       case Token.TOK_DOT:
@@ -216,6 +229,14 @@ class TokenParser {
       case Token.TOK_LT:
       case Token.TOK_LTE:
         return this.parseComparator(left, tokenName);
+      case Token.TOK_PLUS:
+      case Token.TOK_MINUS:
+      case Token.TOK_MULTIPLY:
+      case Token.TOK_STAR:
+      case Token.TOK_DIVIDE:
+      case Token.TOK_MODULO:
+      case Token.TOK_DIV:
+        return this.parseArithmetic(left, tokenName);
       case Token.TOK_LBRACKET:
         const token = this.lookaheadToken(0);
         if (token.type === Token.TOK_NUMBER || token.type === Token.TOK_COLON) {
@@ -299,6 +320,11 @@ class TokenParser {
   private parseComparator(left: ASTNode, comparator: Token): ComparitorNode {
     const right = this.expression(bindingPower[comparator]);
     return { type: 'Comparator', name: comparator, children: [left, right] };
+  }
+
+  private parseArithmetic(left: ASTNode, operator: Token): ArithmeticNode {
+    const right = this.expression(bindingPower[operator]);
+    return { type: 'Arithmetic', operator: operator, children: [left, right] };
   }
 
   private parseDotRHS(rbp: number): ASTNode {
