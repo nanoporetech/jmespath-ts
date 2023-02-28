@@ -17,6 +17,12 @@ export enum Token {
   TOK_PIPE = 'Pipe',
   TOK_OR = 'Or',
   TOK_AND = 'And',
+  TOK_PLUS = 'Plus',
+  TOK_MINUS = 'Minus',
+  TOK_MULTIPLY = 'Multiply',
+  TOK_DIVIDE = 'Divide',
+  TOK_DIV = 'Div',
+  TOK_MODULO = 'Modulo',
   TOK_EQ = 'EQ',
   TOK_GT = 'GT',
   TOK_LT = 'LT',
@@ -79,6 +85,11 @@ export const basicTokens: Record<string, Token> = {
   ']': Token.TOK_RBRACKET,
   '{': Token.TOK_LBRACE,
   '}': Token.TOK_RBRACE,
+  '+': Token.TOK_PLUS,
+  '%': Token.TOK_MODULO,
+  '\u2212': Token.TOK_MINUS,
+  '\u00d7': Token.TOK_MULTIPLY,
+  '\u00f7': Token.TOK_DIVIDE,
 };
 
 const operatorStartToken: Record<string, boolean> = {
@@ -88,6 +99,7 @@ const operatorStartToken: Record<string, boolean> = {
   '>': true,
   '&': true,
   '|': true,
+  '/': true,
 };
 
 const skipChars: Record<string, boolean> = {
@@ -122,6 +134,19 @@ class StreamLexer {
           value: stream[this._current],
         });
         this._current += 1;
+      } else if (stream[this._current] === '-') {
+        if ((this._current + 1 < stream.length) && (isNum(stream[this._current+1]))){
+          const token = this.consumeNumber(stream);
+          token && tokens.push(token);
+        } else {
+          const token = {
+            start: this._current,
+            type: Token.TOK_MINUS,
+            value: '-',
+          };
+          tokens.push(token);
+          this._current += 1;
+        }
       } else if (isNum(stream[this._current])) {
         token = this.consumeNumber(stream);
         tokens.push(token);
@@ -238,7 +263,7 @@ class StreamLexer {
   private consumeOrElse(stream: string, peek: string, token: Token, orElse: Token): LexerToken {
     const start = this._current;
     this._current += 1;
-    if (stream[this._current] === peek) {
+    if ((this._current < stream.length) && (stream[this._current] === peek)) {
       this._current += 1;
       return { start: start, type: orElse, value: stream.slice(start, this._current) };
     }
@@ -263,9 +288,11 @@ class StreamLexer {
       case '=':
         return this.consumeOrElse(stream, '=', Token.TOK_EOF, Token.TOK_EQ);
       case '&':
-        return this.consumeOrElse(stream, '&', Token.TOK_AND, Token.TOK_EXPREF);
+        return this.consumeOrElse(stream, '&', Token.TOK_EXPREF, Token.TOK_AND);
       case '|':
         return this.consumeOrElse(stream, '|', Token.TOK_PIPE, Token.TOK_OR);
+      case '/':
+        return this.consumeOrElse(stream, '/', Token.TOK_DIVIDE, Token.TOK_DIV);
     }
   }
 
