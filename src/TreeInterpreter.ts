@@ -177,7 +177,7 @@ export class TreeInterpreter {
 
           case Token.TOK_MINUS:
             ensureNumbers(operand);
-            return - (operand as number);
+            return -(operand as number);
 
           default:
             throw new Error(`Unknown arithmetic operator: ${(node as ArithmeticNode).operator}`);

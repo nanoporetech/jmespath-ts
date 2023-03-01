@@ -111,9 +111,7 @@ describe('tokenize', () => {
     expect(tokenize('!=')).toMatchObject([{ type: 'NE', value: '!=', start: 0 }]);
   });
   it('should tokenize the AND token', () => {
-    expect(tokenize('&&')).toMatchObject([
-      { type: 'And', value: '&&', start: 0 },
-    ]);
+    expect(tokenize('&&')).toMatchObject([{ type: 'And', value: '&&', start: 0 }]);
     expect(tokenize('a&&b')).toMatchObject([
       { type: 'UnquotedIdentifier', value: 'a', start: 0 },
       { type: 'And', value: '&&', start: 1 },
@@ -121,9 +119,7 @@ describe('tokenize', () => {
     ]);
   });
   it('should tokenize the OR token', () => {
-    expect(tokenize('||')).toMatchObject([
-      { type: 'Or', value: '||', start: 0 },
-    ]);
+    expect(tokenize('||')).toMatchObject([{ type: 'Or', value: '||', start: 0 }]);
     expect(tokenize('a||b')).toMatchObject([
       { type: 'UnquotedIdentifier', value: 'a', start: 0 },
       { type: 'Or', value: '||', start: 1 },

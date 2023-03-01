@@ -1,4 +1,4 @@
-import { JSONValue } from "..";
+import { JSONValue } from '..';
 
 export const isObject = (obj: unknown): obj is Record<string, unknown> => {
   return obj !== null && Object.prototype.toString.call(obj) === '[object Object]';
@@ -79,61 +79,64 @@ export const ensureNumbers = (...operands: (JSONValue | undefined)[]): void => {
     if (typeof operands[i] !== 'number') {
       throw new Error('not-a-number');
     }
-}
+  }
+};
 
 const ensureNumber = (value: unknown): void => {
   if (Number.isNaN(value)) {
     throw new Error('not-a-number');
   }
-}
+};
 
 const notZero = (num?: JSONValue): number => {
-  if (num === undefined)
-    throw new Error('not-a-number: undefined')
-  if (typeof num !== 'number'){
+  if (num === undefined) {
+    throw new Error('not-a-number: undefined');
+  }
+  if (typeof num !== 'number') {
     throw new Error('not-a-number');
   }
-  let n = (num as number);
+  let n = num as number;
   n = +n; // coerce to number
-  if (!n) { // matches -0, +0, NaN
+  if (!n) {
+    // matches -0, +0, NaN
     throw new Error('not-a-number: divide by zero');
   }
   return n;
-}
+};
 
 export const add = (left?: JSONValue, right?: JSONValue): number => {
   ensureNumbers(left, right);
   const result = (left as number) + (right as number);
   ensureNumber(result);
   return result;
-}
+};
 export const sub = (left?: JSONValue, right?: JSONValue): number => {
   ensureNumbers(left, right);
   const result = (left as number) - (right as number);
   ensureNumber(result);
   return result;
-}
+};
 export const mul = (left?: JSONValue, right?: JSONValue): number => {
   ensureNumbers(left, right);
   const result = (left as number) * (right as number);
   ensureNumber(result);
   return result;
-}
+};
 export const divide = (left?: JSONValue, right?: JSONValue): number => {
   ensureNumbers(left, right);
   const result = (left as number) / notZero(right as number);
   ensureNumber(result);
   return result;
-}
+};
 export const div = (left?: JSONValue, right?: JSONValue): number => {
   ensureNumbers(left, right);
   const result = Math.floor((left as number) / notZero(right as number));
   ensureNumber(result);
   return result;
-}
+};
 export const mod = (left?: JSONValue, right?: JSONValue): number => {
   ensureNumbers(left, right);
   const result = (left as number) % (right as number);
   ensureNumber(result);
   return result;
-}
+};

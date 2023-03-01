@@ -138,7 +138,7 @@ class StreamLexer {
         });
         this._current += 1;
       } else if (stream[this._current] === '-') {
-        if ((this._current + 1 < stream.length) && (isNum(stream[this._current+1]))){
+        if (this._current + 1 < stream.length && isNum(stream[this._current + 1])) {
           const token = this.consumeNumber(stream);
           token && tokens.push(token);
         } else {
@@ -266,7 +266,7 @@ class StreamLexer {
   private consumeOrElse(stream: string, peek: string, token: Token, orElse: Token): LexerToken {
     const start = this._current;
     this._current += 1;
-    if ((this._current < stream.length) && (stream[this._current] === peek)) {
+    if (this._current < stream.length && stream[this._current] === peek) {
       this._current += 1;
       return { start: start, type: orElse, value: stream.slice(start, this._current) };
     }
@@ -281,7 +281,7 @@ class StreamLexer {
   private consumeOperator(stream: string): LexerToken | void {
     const start = this._current;
     const startingChar = stream[start];
-    switch (startingChar){
+    switch (startingChar) {
       case '!':
         return this.consumeOrElse(stream, '=', Token.TOK_NOT, Token.TOK_NE);
       case '<':

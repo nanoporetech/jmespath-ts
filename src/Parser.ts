@@ -111,10 +111,10 @@ class TokenParser {
         right = this.expression(bindingPower.Not);
         return { type: 'NotExpression', children: [right] } as ExpressionNode;
       case Token.TOK_MINUS:
-        right = this.expression(bindingPower.Minus)
+        right = this.expression(bindingPower.Minus);
         return { type: 'Unary', operator: token.type, children: [right] } as ArithmeticNode;
       case Token.TOK_PLUS:
-        right = this.expression(bindingPower.Plus)
+        right = this.expression(bindingPower.Plus);
         return { type: 'Unary', operator: token.type, children: [right] } as ArithmeticNode;
       case Token.TOK_STAR:
         left = { type: 'Identity' };

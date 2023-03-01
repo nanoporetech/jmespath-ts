@@ -14,7 +14,7 @@ describe('Searches compiled ast', () => {
     expect(TreeInterpreter.search(compile('foo*bar'), { foo: 40, bar: 2 })).toEqual(80);
   });
   it('should evaluate unary arithmetic expressions', () => {
-    expect(TreeInterpreter.search(compile('\u2212 `3` - +`2`'), { })).toEqual(-5);
+    expect(TreeInterpreter.search(compile('\u2212 `3` - +`2`'), {})).toEqual(-5);
   });
 });
 
