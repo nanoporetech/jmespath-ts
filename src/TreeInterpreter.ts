@@ -1,4 +1,5 @@
 import type {
+  ExpressionReference,
   ExpressionNodeTree,
   FieldNode,
   ExpressionNode,
@@ -9,18 +10,28 @@ import type {
 import { isFalse, isObject, strictDeepEqual } from './utils';
 import { Token } from './Lexer';
 import { Runtime } from './Runtime';
-import type { JSONValue } from '.';
+import type { JSONObject, JSONValue } from '.';
+import { ScopeChain } from './Scope';
 
 export class TreeInterpreter {
   runtime: Runtime;
   private _rootValue: JSONValue | null = null;
+  public _scope: ScopeChain | undefined = undefined;
 
   constructor() {
     this.runtime = new Runtime(this);
   }
 
+  withScope(scope: JSONObject): TreeInterpreter {
+    const interpreter = new TreeInterpreter();
+    interpreter._rootValue = this._rootValue;
+    interpreter._scope = this._scope?.withScope(scope);
+    return interpreter;
+  }
+
   search(node: ExpressionNodeTree, value: JSONValue): JSONValue {
     this._rootValue = value;
+    this._scope = new ScopeChain();
     return this.visit(node, value) as JSONValue;
   }
 
@@ -30,25 +41,24 @@ export class TreeInterpreter {
     let result;
     let first;
     let second;
-    let field;
     let left;
     let right;
     let collected;
     let i;
     let base;
     switch (node.type) {
-      case 'Field':
-        if (value === null) {
-          return null;
-        }
+      case 'Field': {
+        const identifier: string = (node as FieldNode).name as string;
+        let result: JSONValue = null;
         if (isObject(value)) {
-          field = value[(node as FieldNode).name as string];
-          if (field === undefined) {
-            return null;
-          }
-          return field;
+          const inputValue = <JSONObject>(<unknown>value);
+          result = this.getFieldFromObject(identifier, inputValue);
         }
-        return null;
+        if (result == null) {
+          result = this._scope?.getValue(identifier) ?? null;
+        }
+        return result;
+      }
       case 'Subexpression':
         result = this.visit((node as ExpressionNode).children[0], value);
         for (i = 1; i < (node as ExpressionNode).children.length; i += 1) {
@@ -235,12 +245,26 @@ export class TreeInterpreter {
         }
         return this.runtime.callFunction((node as FieldNode).name as string, resolvedArgs) as JSONValue;
       case 'ExpressionReference':
-        const refNode = (node as ExpressionNode).children[0] as ExpressionNode;
+        const refNode = (node as ExpressionNode).children[0] as ExpressionReference;
         refNode.jmespathType = Token.TOK_EXPREF;
+        refNode.context = value as JSONValue;
         return refNode;
       default:
         throw new Error(`Unknown node type: ${node.type}`);
     }
+  }
+
+  getFieldFromObject(name: string, value: JSONObject) {
+    if (value === null) {
+      return null;
+    }
+    if (isObject(value)) {
+      const field = value[name];
+      if (field !== undefined) {
+        return field;
+      }
+    }
+    return null;
   }
 
   computeSliceParams(arrayLength: number, sliceParams: number[]): number[] {

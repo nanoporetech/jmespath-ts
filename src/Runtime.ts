@@ -1,5 +1,5 @@
 import type { TreeInterpreter } from './TreeInterpreter';
-import type { ExpressionNode } from './Lexer';
+import type { ExpressionNode, ExpressionReference } from './Lexer';
 import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
 import { Token } from './Lexer';
 
@@ -250,6 +250,11 @@ export class Runtime {
       return inputValue.length;
     }
     return Object.keys(inputValue).length;
+  };
+
+  private functionLet: RuntimeFunction<[JSONObject, ExpressionReference], JSONValue> = ([inputScope, exprefNode]) => {
+    const interpreter = this._interpreter!.withScope(inputScope);
+    return interpreter.visit(exprefNode, exprefNode.context) as JSONValue;
   };
 
   private functionMap = (resolvedArgs: any[]): any[] => {
@@ -568,6 +573,10 @@ export class Runtime {
           types: [InputArgument.TYPE_STRING, InputArgument.TYPE_ARRAY, InputArgument.TYPE_OBJECT],
         },
       ],
+    },
+    let: {
+      _func: this.functionLet,
+      _signature: [{ types: [InputArgument.TYPE_OBJECT] }, { types: [InputArgument.TYPE_EXPREF] }],
     },
     map: {
       _func: this.functionMap,

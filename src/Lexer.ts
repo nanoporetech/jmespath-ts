@@ -65,6 +65,8 @@ export interface ComparitorNode extends ExpressionNode {
   name: Token;
 }
 
+export type ExpressionReference = { context: JSONValue } & ExpressionNode;
+
 export type ExpressionNodeTree = ASTNode | ExpressionNode | FieldNode | ValueNode;
 
 export const basicTokens: Record<string, Token> = {
