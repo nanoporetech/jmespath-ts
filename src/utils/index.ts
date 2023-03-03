@@ -1,4 +1,4 @@
-import { JSONValue } from '..';
+import { JSONValue } from '../JSON.type';
 
 export const isObject = (obj: unknown): obj is Record<string, unknown> => {
   return obj !== null && Object.prototype.toString.call(obj) === '[object Object]';
@@ -40,21 +40,20 @@ export const strictDeepEqual = (first: unknown, second: unknown): boolean => {
 };
 
 export const isFalse = (obj: unknown): boolean => {
-  if (obj === '' || obj === false || obj === null || obj === undefined) {
-    return true;
-  }
-  if (Array.isArray(obj) && obj.length === 0) {
-    return true;
-  }
-  if (isObject(obj)) {
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        return false;
-      }
+  if (typeof obj === 'object') {
+    if (obj === null) {
+      return true;
+    }
+    if (Array.isArray(obj)) {
+      return obj.length === 0;
+    }
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    for (const _key in obj) {
+      return false;
     }
     return true;
   }
-  return false;
+  return !(typeof obj === 'number' || obj);
 };
 
 export const isAlpha = (ch: string): boolean => {

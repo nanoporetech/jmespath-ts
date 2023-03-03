@@ -8,20 +8,16 @@ describe('parsing', () => {
     expect(compile('foo + bar')).toMatchObject({
       type: 'Arithmetic',
       operator: 'Plus',
-      children: [
-        { type: 'Field', name: 'foo' },
-        { type: 'Field', name: 'bar' },
-      ],
+      left: { type: 'Field', name: 'foo' },
+      right: { type: 'Field', name: 'bar' },
     });
   });
   it('should parse arithmetic subtraction', () => {
     const expected = {
       type: 'Arithmetic',
       operator: 'Minus',
-      children: [
-        { type: 'Field', name: 'foo' },
-        { type: 'Field', name: 'bar' },
-      ],
+      left: { type: 'Field', name: 'foo' },
+      right: { type: 'Field', name: 'bar' },
     };
     expect(compile('foo - bar')).toMatchObject(expected);
     expect(compile('foo − bar')).toMatchObject(expected);
@@ -30,7 +26,7 @@ describe('parsing', () => {
     const expected = {
       type: 'Unary',
       operator: 'Minus',
-      children: [{ type: 'Field', name: 'bar' }],
+      operand: { type: 'Field', name: 'bar' },
     };
     expect(compile('-bar')).toMatchObject(expected);
     expect(compile('\u2212bar')).toMatchObject(expected);

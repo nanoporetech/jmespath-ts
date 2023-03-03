@@ -1,9 +1,6 @@
+import type { ExpressionNode } from './AST.type';
+import type { JSONArray, JSONObject, JSONValue, ObjectDict } from './JSON.type';
 import type { TreeInterpreter } from './TreeInterpreter';
-import type { ExpressionNode } from './Lexer';
-import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
-import { Token } from './Lexer';
-
-import { isObject } from './utils';
 
 export enum InputArgument {
   TYPE_NUMBER = 0,
@@ -24,7 +21,8 @@ export interface InputSignature {
   optional?: boolean;
 }
 
-export type RuntimeFunction<T, U> = (resolvedArgs: T) => U;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RuntimeFunction<T extends any[], U> = (resolvedArgs: T) => U;
 
 export interface FunctionSignature {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,7 +179,7 @@ export class Runtime {
       case '[object Null]':
         return InputArgument.TYPE_NULL;
       case '[object Object]':
-        if ((obj as ObjectDict).jmespathType === Token.TOK_EXPREF) {
+        if ((obj as ObjectDict).expref) {
           return InputArgument.TYPE_EXPREF;
         }
         return InputArgument.TYPE_OBJECT;
@@ -266,7 +264,7 @@ export class Runtime {
   };
 
   private functionLength: RuntimeFunction<[string | JSONArray | JSONObject], number> = ([inputValue]) => {
-    if (!isObject(inputValue)) {
+    if (typeof inputValue === 'string' || Array.isArray(inputValue)) {
       return inputValue.length;
     }
     return Object.keys(inputValue).length;
