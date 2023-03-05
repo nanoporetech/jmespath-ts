@@ -10,10 +10,13 @@ export type ObjectDict<T = unknown> = Record<string, T | undefined>;
 export type JSONPrimitive = string | number | boolean | null;
 export type JSONValue = JSONPrimitive | JSONObject | JSONArray;
 export type JSONObject = { [member: string]: JSONValue };
-export type JSONArray = JSONValue[];
+export type JSONArrayKeyValuePairs = [string, JSONValue][];
+export type JSONArrayArray = JSONArray[];
+export type JSONArray = JSONValue[] | JSONArrayArray | JSONArrayKeyValuePairs;
 
 export const TYPE_ANY = InputArgument.TYPE_ANY;
 export const TYPE_ARRAY = InputArgument.TYPE_ARRAY;
+export const TYPE_ARRAY_ARRAY = InputArgument.TYPE_ARRAY_ARRAY;
 export const TYPE_ARRAY_NUMBER = InputArgument.TYPE_ARRAY_NUMBER;
 export const TYPE_ARRAY_STRING = InputArgument.TYPE_ARRAY_STRING;
 export const TYPE_BOOLEAN = InputArgument.TYPE_BOOLEAN;

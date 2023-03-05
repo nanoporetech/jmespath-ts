@@ -35,6 +35,7 @@
         "foo": "bar",
         "bar": "baz"
       },
+      "items": [["a", "first"], ["b", "second"], ["c", "third"]],
       "null_key": null
     },
     "cases": [
@@ -195,6 +196,22 @@
         "error": "TypeError: floor() expected argument 1 to be type (number) but received type string instead."
       },
       {
+        "expression": "from_items(items)",
+        "result": {"a": "first", "b": "second", "c": "third"}
+      },
+      {
+        "expression": "sort_by(items(objects), &[0])",
+        "result": [["bar", "baz"], ["foo", "bar"]]
+      },
+      {
+        "expression": "items(empty_hash)",
+        "result": []
+      },
+      {
+        "expression": "items(numbers)",
+        "error": "TypeError: items() expected argument 1 to be type (object) but received type array instead."
+      },
+      {
         "expression": "length('abc')",
         "result": 3
       },
@@ -208,7 +225,7 @@
       },
       {
         "expression": "length(@)",
-        "result": 12
+        "result": 13
       },
       {
         "expression": "length(strings[0])",
@@ -670,6 +687,18 @@
           5,
           100
         ]
+      },
+      {
+        "expression": "zip(strings, numbers)",
+        "result": [["a", -1], ["b", 3], ["c", 4]]
+      },
+      {
+        "expression": "zip(strings, numbers, decimals)",
+        "result": [["a", -1, 1.01], ["b", 3, 1.2], ["c", 4, -1.5]]
+      },
+      {
+        "expression": "zip(str)",
+        "error": "TypeError"
       }
     ]
   },
