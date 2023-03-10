@@ -4,7 +4,7 @@ import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
 import { Token } from './Lexer';
 
 import { isObject } from './utils';
-import { lower, upper } from './utils/strings';
+import { lower, trim, trimLeft, trimRight, upper } from './utils/strings';
 
 
 export enum InputArgument {
@@ -468,6 +468,19 @@ export class Runtime {
     return JSON.stringify(inputValue);
   };
 
+  private functionTrim: RuntimeFunction<JSONValue[], string> = resolvedArgs => {
+    const subject = <string>resolvedArgs[0];
+    return trim(subject, resolvedArgs.length > 1 ? <string>resolvedArgs[1] : undefined);
+  };
+  private functionTrimLeft: RuntimeFunction<JSONValue[], string> = resolvedArgs => {
+    const subject = <string>resolvedArgs[0];
+    return trimLeft(subject, resolvedArgs.length > 1 ? <string>resolvedArgs[1] : undefined);
+  };
+  private functionTrimRight: RuntimeFunction<JSONValue[], string> = resolvedArgs => {
+    const subject = <string>resolvedArgs[0];
+    return trimRight(subject, resolvedArgs.length > 1 ? <string>resolvedArgs[1] : undefined);
+  };
+
   private functionType: RuntimeFunction<[JSONValue], string | undefined> = ([inputValue]) => {
     switch (this.getTypeName(inputValue)) {
       case InputArgument.TYPE_NUMBER:
@@ -723,6 +736,39 @@ export class Runtime {
           types: [InputArgument.TYPE_ANY],
         },
       ],
+    },
+    trim: {
+      _func: this.functionTrim,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING]
+        },
+        {
+          types: [InputArgument.TYPE_STRING],
+          optional: true
+        }],
+    },
+    trim_left: {
+      _func: this.functionTrimLeft,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING]
+        },
+        {
+          types: [InputArgument.TYPE_STRING],
+          optional: true
+        }],
+    },
+    trim_right: {
+      _func: this.functionTrimRight,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING]
+        },
+        {
+          types: [InputArgument.TYPE_STRING],
+          optional: true
+        }],
     },
     type: {
       _func: this.functionType,
