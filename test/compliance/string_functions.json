@@ -1,0 +1,15 @@
+[
+  {
+    "given": {
+      "abab": "aabaaabaaaab",
+      "string": "subject string",
+      "split":  "avg|-|min|-|max|-|mean|-|mode|-|median"
+    },
+    "cases": [
+      
+      { "expression": "lower('STRING')", "result":	"string" },
+      { "expression": "upper('string')", "result":	"STRING" }
+
+    ]
+  }
+]

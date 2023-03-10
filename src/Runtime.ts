@@ -4,6 +4,8 @@ import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
 import { Token } from './Lexer';
 
 import { isObject } from './utils';
+import { lower, upper } from './utils/strings';
+
 
 export enum InputArgument {
   TYPE_NUMBER = 0,
@@ -252,6 +254,10 @@ export class Runtime {
     return Object.keys(inputValue).length;
   };
 
+  private functionLower: RuntimeFunction<[string], string> = ([subject]) => {
+    return lower(subject);
+  };
+
   private functionMap = (resolvedArgs: any[]): any[] => {
     if (!this._interpreter) {
       return [];
@@ -483,6 +489,10 @@ export class Runtime {
     }
   };
 
+  private functionUpper: RuntimeFunction<[string], string> = ([subject]) => {
+    return upper(subject);
+  };
+
   private functionValues: RuntimeFunction<[JSONObject], JSONValue[]> = ([inputObject]) => {
     return Object.values(inputObject);
   };
@@ -566,6 +576,14 @@ export class Runtime {
       _signature: [
         {
           types: [InputArgument.TYPE_STRING, InputArgument.TYPE_ARRAY, InputArgument.TYPE_OBJECT],
+        },
+      ],
+    },
+    lower: {
+      _func: this.functionLower,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING],
         },
       ],
     },
@@ -711,6 +729,14 @@ export class Runtime {
       _signature: [
         {
           types: [InputArgument.TYPE_ANY],
+        },
+      ],
+    },
+    upper: {
+      _func: this.functionUpper,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING],
         },
       ],
     },
