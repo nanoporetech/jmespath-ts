@@ -9,7 +9,7 @@ import type {
 import { isFalse, isObject, strictDeepEqual } from './utils';
 import { Token } from './Lexer';
 import { Runtime } from './Runtime';
-import type { JSONValue } from '.';
+import type { JSONArray, JSONValue } from '.';
 
 export class TreeInterpreter {
   runtime: Runtime;
@@ -76,25 +76,46 @@ export class TreeInterpreter {
         }
         return result;
       case 'Slice':
-        if (!Array.isArray(value)) {
+        if (!Array.isArray(value) && typeof value !== 'string') {
           return null;
         }
         const sliceParams = [...(node as ExpressionNode<number>).children];
         const computed = this.computeSliceParams(value.length, sliceParams);
         const [start, stop, step] = computed;
-        result = [];
-        if (step > 0) {
-          for (i = start; i < stop; i += step) {
-            result.push(value[i]);
-          }
+        if (typeof value === 'string') {
+          // string slices is implemented by slicing
+          // the corresponding array of codepoints and
+          // converting the result back to a string
+          const chars = [...value];
+          const sliced = this.slice(chars, start, stop, step);
+          return sliced.join('');
         } else {
-          for (i = start; i > stop; i += step) {
-            result.push(value[i]);
+          return this.slice(value, start, stop, step);
+        }
+      case 'Projection':
+        // projections typically operate on arrays
+        // string slicing produces a 'Projection' whose
+        // first child is an 'IndexExpression' whose
+        // second child is an 'Slice'
+
+        // we allow execution of the left index-expression
+        // to return a string only if the AST has this
+        // specific shape
+
+        let allowString = false;
+        const firstChild = (node as ExpressionNode).children[0];
+        if (firstChild.type === 'IndexExpression') {
+          const nestedChildren = (firstChild as ExpressionNode).children;
+          if (nestedChildren.length > 1 && nestedChildren[1].type === 'Slice') {
+            allowString = true;
           }
         }
-        return result;
-      case 'Projection':
-        base = this.visit((node as ExpressionNode).children[0], value);
+
+        base = this.visit(firstChild, value);
+        if (allowString && typeof base === 'string') {
+          return base;
+        }
+
         if (!Array.isArray(base)) {
           return null;
         }
@@ -267,6 +288,20 @@ export class TreeInterpreter {
       nextActualValue = step < 0 ? arrayLength - 1 : arrayLength;
     }
     return nextActualValue;
+  }
+
+  slice(collection: JSONArray, start: number, end: number, step: number): JSONArray {
+    const result = [];
+    if (step > 0) {
+      for (let i = start; i < end; i += step) {
+        result.push(collection[i]);
+      }
+    } else {
+      for (let i = start; i > end; i += step) {
+        result.push(collection[i]);
+      }
+    }
+    return result;
   }
 }
 
