@@ -1,5 +1,24 @@
-import { ensurePositiveInteger } from ".";
+import { ensureInteger, ensurePositiveInteger } from '.';
 
+export const findFirst = (subject: string, sub: string, start?: number, end?: number): number | null => {
+  if (!subject || !sub) {
+    return null;
+  }
+  start = Math.max(ensureInteger((start = start || 0)), 0);
+  end = Math.min(ensureInteger((end = end || subject.length)), subject.length);
+  const offset = subject.slice(start, end).indexOf(sub);
+  return offset === -1 ? null : offset + start;
+};
+export const findLast = (subject: string, sub: string, start?: number, end?: number): number | null => {
+  if (!subject || !sub) {
+    return null;
+  }
+  start = Math.max(ensureInteger((start = start || 0)), 0);
+  end = Math.min(ensureInteger((end = end || subject.length)), subject.length);
+  const offset = subject.slice(start, end).lastIndexOf(sub);
+  const result = offset === -1 ? null : offset + start;
+  return result;
+};
 export const lower = (subject: string): string => subject.toLowerCase();
 export const replace = (subject: string, string: string, by: string, count?: number): string => {
   if (count === 0) {
