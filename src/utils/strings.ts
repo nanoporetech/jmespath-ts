@@ -1,4 +1,18 @@
+import { ensurePositiveInteger } from ".";
+
 export const lower = (subject: string): string => subject.toLowerCase();
+export const replace = (subject: string, string: string, by: string, count?: number): string => {
+  if (count === 0) {
+    return subject;
+  }
+  if (!count) {
+    // emulating es2021: String.prototype.replaceAll()
+    return subject.split(string).join(by);
+  }
+  ensurePositiveInteger(count);
+  [...Array(count).keys()].map(() => (subject = subject.replace(string, by)));
+  return subject;
+};
 export const trim = (subject: string, chars?: string): string => {
   return trimLeft(trimRight(subject, chars), chars);
 };

@@ -4,7 +4,7 @@ import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
 import { Token } from './Lexer';
 
 import { isObject } from './utils';
-import { lower, trim, trimLeft, trimRight, upper } from './utils/strings';
+import { lower, replace, trim, trimLeft, trimRight, upper } from './utils/strings';
 
 
 export enum InputArgument {
@@ -367,6 +367,13 @@ export class Runtime {
     return null;
   };
 
+  private functionReplace: RuntimeFunction<JSONValue[], string> = resolvedArgs => {
+    const subject = <string>resolvedArgs[0];
+    const string = <string>resolvedArgs[1];
+    const by = <string>resolvedArgs[2];
+    return replace(subject, string, by, resolvedArgs.length > 3 ? <number>resolvedArgs[3] : undefined);
+  };
+
   private functionReverse: RuntimeFunction<[string | JSONArray[]], string | JSONArray> = ([inputValue]) => {
     const typeName = this.getTypeName(inputValue);
     if (typeName === InputArgument.TYPE_STRING) {
@@ -667,6 +674,24 @@ export class Runtime {
         },
       ],
     },
+    replace: {
+      _func: this.functionReplace,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+        {
+          types: [InputArgument.TYPE_STRING],
+        },
+        {
+          types: [InputArgument.TYPE_NUMBER],
+          optional: true,
+        },
+      ],
+    },
     reverse: {
       _func: this.functionReverse,
       _signature: [
@@ -741,34 +766,37 @@ export class Runtime {
       _func: this.functionTrim,
       _signature: [
         {
-          types: [InputArgument.TYPE_STRING]
+          types: [InputArgument.TYPE_STRING],
         },
         {
           types: [InputArgument.TYPE_STRING],
-          optional: true
-        }],
+          optional: true,
+        },
+      ],
     },
     trim_left: {
       _func: this.functionTrimLeft,
       _signature: [
         {
-          types: [InputArgument.TYPE_STRING]
+          types: [InputArgument.TYPE_STRING],
         },
         {
           types: [InputArgument.TYPE_STRING],
-          optional: true
-        }],
+          optional: true,
+        },
+      ],
     },
     trim_right: {
       _func: this.functionTrimRight,
       _signature: [
         {
-          types: [InputArgument.TYPE_STRING]
+          types: [InputArgument.TYPE_STRING],
         },
         {
           types: [InputArgument.TYPE_STRING],
-          optional: true
-        }],
+          optional: true,
+        },
+      ],
     },
     type: {
       _func: this.functionType,
