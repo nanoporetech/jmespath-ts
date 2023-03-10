@@ -52,10 +52,10 @@ export class TreeInterpreter {
       case 'Subexpression':
         result = this.visit((node as ExpressionNode).children[0], value);
         for (i = 1; i < (node as ExpressionNode).children.length; i += 1) {
-          result = this.visit((node as ExpressionNode).children[1], result);
           if (result === null) {
             return null;
           }
+          result = this.visit((node as ExpressionNode).children[1], result);
         }
         return result;
       case 'IndexExpression':
@@ -184,9 +184,6 @@ export class TreeInterpreter {
       case 'Identity':
         return value;
       case 'MultiSelectList':
-        if (value === null) {
-          return null;
-        }
         collected = [];
         for (i = 0; i < (node as ExpressionNode).children.length; i += 1) {
           collected.push(this.visit((node as ExpressionNode).children[i], value));
