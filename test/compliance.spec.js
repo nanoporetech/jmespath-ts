@@ -74,7 +74,9 @@ function addTestSuitesFromFile(filename) {
 
         test.each(cases)('should pass test %# %s', (expression, result, error) => {
           if (error !== undefined) {
-            expect(() => search(given, expression)).toThrow(error);
+            expectError(() => {
+              return search(given, expression);
+            }, error);
           } else {
             expect(search(given, expression)).toEqual(result);
           }

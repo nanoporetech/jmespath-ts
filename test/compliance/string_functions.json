@@ -60,6 +60,32 @@
       { "expression": "upper('string')", "result":	"STRING" },
 
       {
+        "expression": "pad_left('string', '1')",
+        "error": "TypeError: pad_left() expected argument 2 to be type (number) but received type string instead."
+
+      },
+      {
+        "expression": "pad_left('string', `1`, '--')",
+        "error": "invalid-value"
+
+      },
+      {
+        "expression": "pad_left('string', `1.4`)",
+        "error": "invalid-value"
+
+      },
+
+      { "expression": "pad_left('string', `0`)", "result": "string" },
+      { "expression": "pad_left('string', `5`)", "result": "string" },
+      { "expression": "pad_left('string', `10`)", "result": "    string" },
+      { "expression": "pad_left('string', `10`, '-')", "result": "----string" },
+
+      { "expression": "pad_right('string', `0`)", "result": "string" },
+      { "expression": "pad_right('string', `5`)", "result": "string" },
+      { "expression": "pad_right('string', `10`)", "result": "string    " },
+      { "expression": "pad_right('string', `10`, '-')", "result": "string----" },
+
+      {
         "expression": "replace(abab, 'aa', '-', `0.333333`)",
         "error": "invalid-value"
       },
