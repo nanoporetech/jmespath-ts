@@ -1,5 +1,6 @@
 import {
   ComparitorNode,
+  ExpressionReference,
   ExpressionNode,
   ExpressionNodeTree,
   FieldNode,
@@ -136,9 +137,10 @@ class TokenParser {
         return { type: Token.TOK_CURRENT };
       case Token.TOK_ROOT:
         return { type: Token.TOK_ROOT };
-      case Token.TOK_EXPREF:
-        expression = this.expression(bindingPower.Expref);
-        return { type: 'ExpressionReference', children: [expression] } as ExpressionNode;
+      case Token.TOK_EXPREF: {
+        const child = this.expression(bindingPower.Expref);
+        return { type: 'ExpressionReference', children: [child] } as ExpressionReference;
+      }
       case Token.TOK_LPAREN:
         const args: ASTNode[] = [];
         while (this.lookahead(0) !== Token.TOK_RPAREN) {

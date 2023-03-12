@@ -111,6 +111,10 @@ describe('Searches compiled ast', () => {
     const ast = compile('foo.bar');
     expect(TreeInterpreter.search(ast, { foo: { bar: 'BAZ' } })).toEqual('BAZ');
   });
+  it('should evaluate lexical scope', () => {
+    const ast = compile("let({foo: 'bar'}, &foo)");
+    expect(TreeInterpreter.search(ast, { this: 'is the context' })).toEqual('bar');
+  });
 });
 
 describe('strictDeepEqual', () => {
