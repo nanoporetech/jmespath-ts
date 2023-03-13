@@ -1,0 +1,39 @@
+[
+  {
+    "comment": "Literals",
+    "given": {
+      "type": "object"
+    },
+    "cases": [
+      {
+        "expression": "`foo`",
+        "error": "syntax"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+0085 NEXT LINE",
+        "expression": "`0\u0085`",
+        "error": "syntax"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+00A0 NO-BREAK SPACE",
+        "expression": "`0\u00A0`",
+        "error": "syntax"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+1680 OGHAM SPACE MARK",
+        "expression": "`0\u1680`",
+        "error": "syntax"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+2028 LINE SEPARATOR",
+        "expression": "`0\u2028`",
+        "error": "syntax"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+3000 IDEOGRAPHIC SPACE",
+        "expression": "`0\u3000`",
+        "error": "syntax"
+      }
+    ]
+  }
+]

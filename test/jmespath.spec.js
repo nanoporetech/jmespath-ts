@@ -1,5 +1,6 @@
 import { search, tokenize, compile, TreeInterpreter } from '../src';
 import { strictDeepEqual } from '../src/utils';
+import { expectError } from './compliance.spec';
 
 describe('tokenize', () => {
   it('should tokenize unquoted identifier', () => {
@@ -50,10 +51,10 @@ describe('tokenize', () => {
   it('should tokenize json literals', () => {
     expect(tokenize('`true`')).toMatchObject([{ type: 'Literal', value: true, start: 0 }]);
   });
-  it('should not requiring surrounding quotes for strings', () => {
-    expect(tokenize('`foo`')).toMatchObject([{ type: 'Literal', value: 'foo', start: 0 }]);
+  it('should not require surrounding quotes for strings', () => {
+    expect(tokenize('`foo`', { enable_legacy_literals: true })).toMatchObject([{ type: 'Literal', value: 'foo', start: 0 }]);
   });
-  it('should not requiring surrounding quotes for numbers', () => {
+  it('should not require surrounding quotes for numbers', () => {
     expect(tokenize('`20`')).toMatchObject([{ type: 'Literal', value: 20, start: 0 }]);
   });
   it('should tokenize literal lists with chars afterwards', () => {
@@ -182,5 +183,8 @@ describe('search', () => {
       expect(e.message).toContain('length() expected argument 1 to be type (string | array | object)');
       expect(e.message).toContain('received type null instead.');
     }
+  });
+  it('should report failure to parse an empty legacy JSON string literal', () => {
+    expectError(() => search([], '``'), ['syntax', 'unexpected end of JSON input']);
   });
 });

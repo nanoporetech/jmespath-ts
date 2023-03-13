@@ -9,6 +9,7 @@ import {
   ASTNode,
 } from './Lexer';
 import Lexer, { Token } from './Lexer';
+import { Options } from './Parser.type';
 
 const bindingPower: Record<string, number> = {
   [Token.TOK_EOF]: 0,
@@ -44,9 +45,11 @@ const bindingPower: Record<string, number> = {
 class TokenParser {
   index = 0;
   tokens: LexerToken[] = [];
-  parse(expression: string): ASTNode {
-    this.loadTokens(expression);
+
+  parse(expression: string, options?: Options): ASTNode {
+    this.loadTokens(expression, options || { enable_legacy_literals: false, });
     this.index = 0;
+
     const ast = this.expression(0);
     if (this.lookahead(0) !== Token.TOK_EOF) {
       const token = this.lookaheadToken(0);
@@ -55,8 +58,8 @@ class TokenParser {
     return ast;
   }
 
-  private loadTokens(expression: string): void {
-    this.tokens = [...Lexer.tokenize(expression), { type: Token.TOK_EOF, value: '', start: expression.length }];
+  private loadTokens(expression: string, options: Options): void {
+    this.tokens = [...Lexer.tokenize(expression, options), { type: Token.TOK_EOF, value: '', start: expression.length }];
   }
 
   expression(rbp: number): ASTNode {
