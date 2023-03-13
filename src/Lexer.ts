@@ -1,6 +1,10 @@
 import { isAlpha, isNum, isAlphaNum } from './utils/index';
 import type { JSONValue } from './index';
 
+export interface LexerOptions {
+  enable_legacy_literals?: boolean;
+}
+
 export enum Token {
   TOK_EOF = 'EOF',
   TOK_UNQUOTEDIDENTIFIER = 'UnquotedIdentifier',
@@ -96,10 +100,13 @@ const skipChars: Record<string, boolean> = {
 };
 
 class StreamLexer {
-  _current = 0;
-  tokenize(stream: string): LexerToken[] {
+  private _current = 0;
+  private _enable_legacy_literals = false;
+
+  tokenize(stream: string, options?: LexerOptions): LexerToken[] {
     const tokens: LexerToken[] = [];
     this._current = 0;
+    this._enable_legacy_literals = options?.enable_legacy_literals || false;
 
     let start;
     let identifier;
@@ -296,11 +303,31 @@ class StreamLexer {
       }
       this._current = current;
     }
-    let literalString = stream.slice(start, this._current).trimLeft();
+    let literalString = stream.slice(start, this._current).trimStart();
     literalString = literalString.replace('\\`', '`');
-    const literal: JSONValue = this.looksLikeJSON(literalString)
-      ? (JSON.parse(literalString) as JSONValue)
-      : (JSON.parse(`"${literalString}"`) as string);
+
+    let literal: JSONValue = null;
+    let ok = false;
+
+    // attempts to detect and parse valid JSON
+
+    if (this.looksLikeJSON(literalString)) {
+      [literal, ok] = this.parseJSON(literalString);
+    }
+
+    // invalid JSON values should be converted to quoted
+    // JSON strings during the JEP-12 deprecation period.
+
+    if (!ok && this._enable_legacy_literals) {
+      [literal, ok] = this.parseJSON(`"${literalString}"`);
+    }
+
+    if (!ok) {
+      const error = new Error(`Syntax: unexpected end of JSON input or invalid format for a JSON literal: ${stream[this._current]}`);
+      error.name = 'LexerError';
+      throw error;
+    }
+
     this._current += 1;
     return literal;
   }
@@ -323,12 +350,22 @@ class StreamLexer {
       try {
         JSON.parse(literalString);
         return true;
-      } catch (ex) {
+      } catch {
         return false;
       }
     }
     return false;
   }
+
+  private parseJSON(text: string): [JSONValue, boolean]{
+    try {
+      const json = JSON.parse(text);
+      return [json, true];
+    } catch {
+      return [null, false];
+    }
+  }
+
 }
 
 export const Lexer = new StreamLexer();

@@ -11,7 +11,61 @@ function endsWith(str, suffix) {
   return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
-function addTestSuitesFromFile(filename) {
+export function expectError(action, expected) {
+  let result = null;
+  let succeeded = false;
+
+  const errorTypes = ['invalid-type', 'invalid-value', 'invalid-arity', 'not-a-number', 'syntax', 'unknown-function'];
+
+  function makePattern(text, replaceHyphens = false) {
+    let pattern = text;
+
+    if (replaceHyphens) {
+      errorTypes.map(errorType => {
+        if (pattern.indexOf(errorType) != -1) {
+          pattern = pattern.replace(errorType, errorType.replace('-', ' '));
+        }
+      });
+    }
+
+    pattern = text
+      .replace(/\-/g, '\\-')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)')
+      .replace(/\./g, '\\.')
+      .replace(/\*/g, '\\*')
+      .replace(/\^/g, '\\^');
+
+    return pattern;
+  }
+  function getPattern(text) {
+    const pattern = `(${makePattern(text)})|(${makePattern(text, true)})`;
+    return new RegExp(pattern, "i");
+  }
+
+  try {
+    result = action();
+    succeeded = true;
+  } catch (err) {
+    if (err instanceof Error) {
+      if (Array.isArray(expected)) {
+        expected.map(element => {
+          expect(err.message).toMatch(getPattern(element));
+        });
+      } else {
+        expect(err.message).toMatch(getPattern(expected));
+      }
+    }
+  }
+
+  if (succeeded) {
+    throw new Error(`the action was expected to throw an error but returned '${JSON.stringify(result)}' instead`);
+  }
+}
+
+
+function addTestSuitesFromFile(filename, options) {
+  options = options || {};
   describe(filename, () => {
     const spec = JSON.parse(readFileSync(filename, 'utf-8'));
     for (let i = 0; i < spec.length; i++) {
@@ -22,9 +76,12 @@ function addTestSuitesFromFile(filename) {
 
         test.each(cases)('should pass test %# %s', (expression, result, error) => {
           if (error !== undefined) {
-            expect(() => search(given, expression)).toThrow(error);
+            expectError(
+              () => search(given, expression, options),
+              error
+              );
           } else {
-            expect(search(given, expression)).toEqual(result);
+            expect(search(given, expression, options)).toEqual(result);
           }
         });
       });
@@ -32,10 +89,31 @@ function addTestSuitesFromFile(filename) {
   });
 }
 
-const listing = readdirSync('test/compliance');
-for (let i = 0; i < listing.length; i++) {
-  const filename = 'test/compliance/' + listing[i];
-  if (statSync(filename).isFile() && endsWith(filename, '.json') && !notImplementedYet.includes(basename(filename))) {
-    addTestSuitesFromFile(filename);
+function getFileList(dirName) {
+  let files = [];
+  const items = readdirSync(dirName, { withFileTypes: true, });
+  for (const item of items){
+    const itemName = `${dirName}/${item.name}`;
+    if (item.isDirectory()) {
+      files = [
+        ...files,
+        ...getFileList(itemName),
+      ];
+    } else {
+      if (item.name.endsWith('.json') && !notImplementedYet.includes(basename(item.name))) {
+        files.push(itemName);
+      }
+    }
   }
+
+  return files;
+}
+
+const listing = getFileList('test/compliance');
+for (let i = 0; i < listing.length; i++) {
+  let options = {};
+  if (basename(listing[i]) === 'legacy-literal.json'){
+    options.enable_legacy_literals = true;
+  }
+  addTestSuitesFromFile(listing[i], options);
 }

@@ -1,0 +1,89 @@
+[
+  {
+    "given": {
+      "foo": [
+        {
+          "name": "a"
+        },
+        {
+          "name": "b"
+        }
+      ],
+      "bar": {
+        "baz": "qux"
+      }
+    },
+    "cases": [
+      {
+        "expression": "`foo`",
+        "result": "foo"
+      },
+      {
+        "comment": "Double quotes must be escaped.",
+        "expression": "`foo\\\"quote`",
+        "result": "foo\"quote"
+      },
+      {
+        "expression": "`✓`",
+        "result": "✓"
+      },
+      {
+        "expression": "`1\\``",
+        "result": "1`"
+      },
+      {
+        "comment": "Multiple literal expressions with escapes",
+        "expression": "`\\\\`.{a:`b`}",
+        "result": {
+          "a": "b"
+        }
+      }
+    ]
+  },
+  {
+    "comment": "Literals",
+    "given": {
+      "type": "object"
+    },
+    "cases": [
+      {
+        "expression": "`foo`",
+        "result": "foo"
+      },
+      {
+        "expression": "`      foo`",
+        "result": "foo"
+      },
+      {
+        "comment": "Literal on RHS of subexpr not allowed",
+        "expression": "foo.`bar`",
+        "error": "syntax"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+0085 NEXT LINE",
+        "expression": "`0\u0085`",
+        "result": "0\u0085"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+00A0 NO-BREAK SPACE",
+        "expression": "`0\u00A0`",
+        "result": "0\u00A0"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+1680 OGHAM SPACE MARK",
+        "expression": "`0\u1680`",
+        "result": "0\u1680"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+2028 LINE SEPARATOR",
+        "expression": "`0\u2028`",
+        "result": "0\u2028"
+      },
+      {
+        "comment": "Literal with non-JSON whitespace U+3000 IDEOGRAPHIC SPACE",
+        "expression": "`0\u3000`",
+        "result": "0\u3000"
+      }
+    ]
+  }
+]
