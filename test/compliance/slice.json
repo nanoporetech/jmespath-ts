@@ -120,7 +120,7 @@
     },
     {
       "expression": "foo[8:2:0:1]",
-      "error": "Expected Rbracket, got: Number"
+      "error": "Syntax error, too many colons in slice expression"
     },
     {
       "expression": "foo[8:2&]",
