@@ -104,6 +104,14 @@ describe('parsing', () => {
   it('should parse field node', () => {
     expect(compile('foo')).toMatchObject({ type: 'Field', name: 'foo' });
   });
+  it('should fail on invalid slices', () => {
+    try {
+      compile('bar[1:1:0]');
+      fail('invalid slice expression was successfully parsed');
+    } catch (e) {
+      expect(e.message).toContain('Invalid slice');
+    }
+  });
 });
 
 describe('Searches compiled ast', () => {
