@@ -218,4 +218,3 @@ export class TreeInterpreter {
 }
 
 export const TreeInterpreterInstance = new TreeInterpreter();
-export default TreeInterpreterInstance;

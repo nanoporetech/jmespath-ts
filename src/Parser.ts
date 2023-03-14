@@ -9,7 +9,7 @@ import type {
   SliceNode,
   UnaryExpressionNode,
 } from './AST.type';
-import Lexer from './Lexer';
+import { Lexer } from './Lexer';
 import { LexerToken, Token } from './Lexer.type';
 
 const bindingPower: Record<string, number> = {
@@ -407,4 +407,3 @@ class TokenParser {
 }
 
 export const Parser = new TokenParser();
-export default Parser;

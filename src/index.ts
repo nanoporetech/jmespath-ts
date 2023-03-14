@@ -1,6 +1,6 @@
-import Parser from './Parser';
-import Lexer from './Lexer';
-import TreeInterpreterInst from './TreeInterpreter';
+import {Parser} from './Parser';
+import {Lexer} from './Lexer';
+import {TreeInterpreterInstance} from './TreeInterpreter';
 import { InputArgument, RuntimeFunction, InputSignature } from './Runtime';
 import { JSONValue } from './JSON.type';
 import { LexerToken } from './Lexer.type';
@@ -33,15 +33,15 @@ export const registerFunction = (
   customFunction: RuntimeFunction<any, any>,
   signature: InputSignature[],
 ): void => {
-  TreeInterpreterInst.runtime.registerFunction(functionName, customFunction, signature);
+  TreeInterpreterInstance.runtime.registerFunction(functionName, customFunction, signature);
 };
 
 export function search(data: JSONValue, expression: string): JSONValue {
   const nodeTree = Parser.parse(expression);
-  return TreeInterpreterInst.search(nodeTree, data);
+  return TreeInterpreterInstance.search(nodeTree, data);
 }
 
-export const TreeInterpreter = TreeInterpreterInst;
+export const TreeInterpreter = TreeInterpreterInstance;
 
 export const jmespath = {
   compile,
