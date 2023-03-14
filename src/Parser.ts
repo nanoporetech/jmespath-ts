@@ -272,24 +272,35 @@ class TokenParser {
     return indexExpr;
   }
 
-  private parseSliceExpression(): ExpressionNode<number | null> {
+  private parseSliceExpression(): ExpressionNode<number |null> {
     const parts: (number | null)[] = [null, null, null];
+
     let index = 0;
-    let currentTokenType = this.lookahead(0);
-    while (currentTokenType !== Token.TOK_RBRACKET && index < 3) {
-      if (currentTokenType === Token.TOK_COLON) {
-        index += 1;
+    let current = this.lookaheadToken(0);
+
+    while (current.type != Token.TOK_RBRACKET && index < 3) {
+      if (current.type === Token.TOK_COLON) {
+        index++;
+        if (index === 3){
+          this.errorToken(this.lookaheadToken(0), 'Syntax error, too many colons in slice expression');
+        }
         this.advance();
-      } else if (currentTokenType === Token.TOK_NUMBER) {
-        parts[index] = this.lookaheadToken(0).value as number;
-        this.advance();
-      } else {
-        const token = this.lookaheadToken(0);
-        this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
       }
-      currentTokenType = this.lookahead(0);
+      else if (current.type === Token.TOK_NUMBER) {
+        const part = this.lookaheadToken(0).value as number;
+        parts[index] = part;
+        this.advance();
+      }
+      else {
+        const next = this.lookaheadToken(0);
+        this.errorToken(next, `Syntax error, unexpected token: ${next.value}(${next.type})`);
+      }
+
+      current = this.lookaheadToken(0);
     }
+
     this.match(Token.TOK_RBRACKET);
+
     return {
       children: parts,
       type: 'Slice',
