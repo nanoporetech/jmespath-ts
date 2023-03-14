@@ -290,6 +290,9 @@ class TokenParser {
       currentTokenType = this.lookahead(0);
     }
     this.match(Token.TOK_RBRACKET);
+    if (parts[2] === 0) {
+      throw new Error('Invalid slice, step cannot be 0');
+    }
     return {
       children: parts,
       type: 'Slice',
