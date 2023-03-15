@@ -101,6 +101,22 @@
       { "expression": "replace(abab, 'aa', '-', `3`)", "result": "-b-ab-aab" },
       { "expression": "replace(abab, 'aa', '-')", "result":	"-b-ab--b" },
 
+      {
+        "expression": "split('/', '/', `3.7`)",
+        "error": "invalid-value"
+      },
+
+      { "expression": "split('/', '/')", "result": [ "", "" ] },
+      { "expression": "split('', '')", "result": [ ] },
+      { "expression": "split('all chars', '')", "result": [ "a", "l", "l", " ", "c", "h", "a", "r", "s" ] },
+      { "expression": "split('all chars', '', `3`)", "result": [ "a", "l", "l", " chars" ] },
+
+      { "expression": "split(split, '|-|')", "result": [ "avg", "min", "max", "mean", "mode", "median" ] },
+      { "expression": "split(split, '|-|', `3`)", "result": [ "avg", "min", "max", "mean|-|mode|-|median" ] },
+      { "expression": "split(split, '|-|', `2`)", "result": [ "avg", "min", "max|-|mean|-|mode|-|median" ] },
+      { "expression": "split(split, '|-|', `1`)", "result": [ "avg", "min|-|max|-|mean|-|mode|-|median" ] },
+      { "expression": "split(split, '|-|', `0`)", "result": [ "avg|-|min|-|max|-|mean|-|mode|-|median" ] },
+
       { "expression": "trim(' subject string ')", "result": "subject string" },
       { "expression": "trim(' subject string ', '')", "result": "subject string" },
       { "expression": "trim(' subject string ', ' ')", "result": "subject string" },
