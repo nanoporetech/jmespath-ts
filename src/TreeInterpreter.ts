@@ -1,7 +1,18 @@
-import { isFalse, strictDeepEqual } from './utils';
+import {
+  add,
+  floorDivide,
+  divide,
+  ensureNumbers,
+  isFalse,
+  modulus,
+  multiply,
+  strictDeepEqual,
+  subtract,
+} from './utils';
 import { Runtime } from './Runtime';
 import type { ExpressionNode, ExpressionReference, SliceNode } from './AST.type';
 import type { JSONArray, JSONObject, JSONValue } from './JSON.type';
+import { Token } from './Lexer.type';
 
 export class TreeInterpreter {
   runtime: Runtime;
@@ -109,6 +120,48 @@ export class TreeInterpreter {
           }
         }
         return results;
+      }
+      case 'Arithmetic': {
+        const first = this.visit(node.left, value) as JSONValue;
+        const second = this.visit(node.right, value) as JSONValue;
+        switch (node.operator) {
+          case Token.TOK_PLUS:
+            return add(first, second);
+
+          case Token.TOK_MINUS:
+            return subtract(first, second);
+
+          case Token.TOK_MULTIPLY:
+          case Token.TOK_STAR:
+            return multiply(first, second);
+
+          case Token.TOK_DIVIDE:
+            return divide(first, second);
+
+          case Token.TOK_MODULO:
+            return modulus(first, second);
+
+          case Token.TOK_DIV:
+            return floorDivide(first, second);
+
+          default:
+            throw new Error(`Unknown arithmetic operator: ${node.operator}`);
+        }
+      }
+      case 'Unary': {
+        const operand = this.visit(node.operand, value) as JSONValue;
+        switch (node.operator) {
+          case Token.TOK_PLUS:
+            ensureNumbers(operand);
+            return operand as number;
+
+          case Token.TOK_MINUS:
+            ensureNumbers(operand);
+            return -(operand as number);
+
+          default:
+            throw new Error(`Unknown arithmetic operator: ${node.operator}`);
+        }
       }
       case 'Comparator': {
         const first = this.visit(node.left, value);

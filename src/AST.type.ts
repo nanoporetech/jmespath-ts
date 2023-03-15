@@ -1,4 +1,5 @@
 import type { JSONValue } from './JSON.type';
+import type { Token } from './Lexer.type';
 
 export interface FieldNode {
   readonly type: 'Field';
@@ -27,6 +28,21 @@ export interface SliceNode {
   readonly start: number | null;
   readonly stop: number | null;
   readonly step: number | null;
+}
+
+export type BinaryOperatorType = 'Plus' | 'Minus' | 'Multiply' | Token.TOK_STAR | 'Divide' | 'Modulo' | 'Div';
+export type UnaryOperatorType = 'Plus' | 'Minus';
+
+export interface BinaryArithmeticNode {
+  readonly type: 'Arithmetic';
+  readonly operator: BinaryOperatorType;
+  readonly left: ExpressionNode;
+  readonly right: ExpressionNode;
+}
+export interface UnaryArithmeticNode {
+  readonly type: 'Unary';
+  readonly operator: UnaryOperatorType;
+  readonly operand: ExpressionNode;
 }
 
 export type ComparatorType = 'GT' | 'LT' | 'GTE' | 'LTE' | 'NE' | 'EQ';
@@ -89,6 +105,8 @@ export type ExpressionNode =
   | SimpleExpressionNode
   | UnaryExpressionNode
   | BinaryExpressionNode
+  | UnaryArithmeticNode
+  | BinaryArithmeticNode
   | ComparatorNode
   | SliceNode
   | FilterProjectionNode

@@ -16,6 +16,7 @@ Update package dependencies to address vulnerabilities
 
 ### Added
 
+- [JEP-16] Arithmetic Expressions [@springcomp](https://github.com/springcomp)
 - [JEP-19] Pipe evaluation [@springcomp](https://github.com/springcomp)
 - `CHANGELOG.md`: Going to start tracking changes now that the JMESPath community is contributing
 
