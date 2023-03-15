@@ -68,3 +68,15 @@ export const isAlphaNum = (ch: string): boolean => {
   // tslint:disable-next-line: strict-comparisons
   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch === '_';
 };
+export const ensureInteger = (value: unknown): number => {
+  if (!(typeof value === 'number') || Math.floor(value) !== value) {
+    throw new Error('invalid-value: expecting an integer.');
+  }
+  return <number>value;
+};
+export const ensurePositiveInteger = (value: unknown): number => {
+  if (!(typeof value === 'number') || <number>value < 0 || Math.floor(value) !== value) {
+    throw new Error('invalid-value: expecting a non-negative integer.');
+  }
+  return <number>value;
+};

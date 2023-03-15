@@ -1,0 +1,147 @@
+[
+  {
+    "given": {
+      "abab": "aabaaabaaaab",
+      "string": "subject string",
+      "split":  "avg|-|min|-|max|-|mean|-|mode|-|median"
+    },
+    "cases": [
+      {
+        "expression": "find_first(string, 'string', `1`, `2`, `3`)",
+        "error": "ArgumentError: find_first() takes 2 arguments but received 5"
+      },
+      {
+        "expression": "find_first(@, 'string', `1`, `2`)",
+        "error": "TypeError"
+      },
+      {
+        "expression": "find_first(string, 'string', '1')",
+        "error": "TypeError"
+      },
+      {
+        "expression": "find_first(string, 'string', `1`, '2')",
+        "error": "TypeError"
+      },
+      {
+        "expression": "find_first(string, 'string', `1.3`, '2')",
+        "error": "TypeError"
+      },
+      {
+        "expression": "find_first(string, 'string', `1`, '2.4')",
+        "error": "TypeError"
+      },
+
+      { "expression": "find_first(string, 'string')", "result": 8 },
+      { "expression": "find_first(string, 'string', `0`)", "result": 8 },
+      { "expression": "find_first(string, 'string', `0`, `14`)", "result": 8 },
+      { "expression": "find_first(string, 'string', `-6`)", "result": 8 },
+      { "expression": "find_first(string, 'string', `-99`, `100`)", "result": 8 },
+      { "expression": "find_first(string, 'string', `0`, `13`)", "result": null },
+      { "expression": "find_first(string, 'string', `8`)", "result": 8 },
+      { "expression": "find_first(string, 'string', `8`, `11`)", "result": null },
+      { "expression": "find_first(string, 'string', `9`)", "result": null },
+      { "expression": "find_first(string, 's')", "result": 0 },
+      { "expression": "find_first(string, 's', `1`)", "result": 8 },
+      { "expression": "find_first(string, '')", "result": null },
+      { "expression": "find_first('', '')", "result": null },
+      
+      { "expression": "find_last(string, 'string')", "result": 8 },
+      { "expression": "find_last(string, 'string', `8`)", "result": 8 },
+      { "expression": "find_last(string, 'string', `8`, `9`)", "result":	null },
+      { "expression": "find_last(string, 'string', `9`)", "result":	null },
+      { "expression": "find_last(string, 's', `1`)", "result":	8 },
+      { "expression": "find_last(string, 's', `-6`)", "result":	8 },
+
+      { "expression": "find_last(string, 's', `0`, `7`)", "result":	0 },
+      { "expression": "find_last(string, '')", "result": null },
+      { "expression": "find_last('', '')", "result": null },
+      
+      { "expression": "lower('STRING')", "result":	"string" },
+      { "expression": "upper('string')", "result":	"STRING" },
+
+      {
+        "expression": "pad_left('string', '1')",
+        "error": "TypeError: pad_left() expected argument 2 to be type (number) but received type string instead."
+
+      },
+      {
+        "expression": "pad_left('string', `1`, '--')",
+        "error": "invalid-value"
+
+      },
+      {
+        "expression": "pad_left('string', `1.4`)",
+        "error": "invalid-value"
+
+      },
+
+      { "expression": "pad_left('string', `0`)", "result": "string" },
+      { "expression": "pad_left('string', `5`)", "result": "string" },
+      { "expression": "pad_left('string', `10`)", "result": "    string" },
+      { "expression": "pad_left('string', `10`, '-')", "result": "----string" },
+
+      { "expression": "pad_right('string', `0`)", "result": "string" },
+      { "expression": "pad_right('string', `5`)", "result": "string" },
+      { "expression": "pad_right('string', `10`)", "result": "string    " },
+      { "expression": "pad_right('string', `10`, '-')", "result": "string----" },
+
+      {
+        "expression": "replace(abab, 'aa', '-', `0.333333`)",
+        "error": "invalid-value"
+      },
+
+      {
+        "expression": "replace(abab, 'aa', '-', `0.001`)",
+        "error": "invalid-value"
+      },
+
+      { "expression": "replace(abab, 'aa', '-', `0`)", "result": "aabaaabaaaab" },
+      { "expression": "replace(abab, 'aa', '-', `1`)", "result": "-baaabaaaab" },
+      { "expression": "replace(abab, 'aa', '-', `2`)", "result": "-b-abaaaab" },
+      { "expression": "replace(abab, 'aa', '-', `3`)", "result": "-b-ab-aab" },
+      { "expression": "replace(abab, 'aa', '-')", "result":	"-b-ab--b" },
+
+      {
+        "expression": "split('/', '/', `3.7`)",
+        "error": "invalid-value"
+      },
+
+      { "expression": "split('/', '/')", "result": [ "", "" ] },
+      { "expression": "split('', '')", "result": [ ] },
+      { "expression": "split('all chars', '')", "result": [ "a", "l", "l", " ", "c", "h", "a", "r", "s" ] },
+      { "expression": "split('all chars', '', `3`)", "result": [ "a", "l", "l", " chars" ] },
+
+      { "expression": "split(split, '|-|')", "result": [ "avg", "min", "max", "mean", "mode", "median" ] },
+      { "expression": "split(split, '|-|', `3`)", "result": [ "avg", "min", "max", "mean|-|mode|-|median" ] },
+      { "expression": "split(split, '|-|', `2`)", "result": [ "avg", "min", "max|-|mean|-|mode|-|median" ] },
+      { "expression": "split(split, '|-|', `1`)", "result": [ "avg", "min|-|max|-|mean|-|mode|-|median" ] },
+      { "expression": "split(split, '|-|', `0`)", "result": [ "avg|-|min|-|max|-|mean|-|mode|-|median" ] },
+
+      { "expression": "trim(' subject string ')", "result": "subject string" },
+      { "expression": "trim(' subject string ', '')", "result": "subject string" },
+      { "expression": "trim(' subject string ', ' ')", "result": "subject string" },
+      { "expression": "trim(' subject string ', 's')", "result": " subject string " },
+      { "expression": "trim(' subject string ', 'su')", "result": " subject string " },
+      { "expression": "trim(' subject string ', 'su ')", "result": "bject string" },
+      { "expression": "trim(' subject string ', 'gsu ')", "result": "bject strin" },
+
+      {
+        "expression": "trim('\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000')",
+        "result": ""
+      },
+
+      { "expression": "trim_left(' subject string ')", "result": "subject string " },
+      { "expression": "trim_left(' subject string ', 's')", "result": " subject string " },
+      { "expression": "trim_left(' subject string ', 'su')", "result": " subject string " },
+      { "expression": "trim_left(' subject string ', 'su ')", "result": "bject string " },
+      { "expression": "trim_left(' subject string ', 'gsu ')", "result": "bject string "     },
+
+      { "expression": "trim_right(' subject string ')", "result": " subject string" },
+      { "expression": "trim_right(' subject string ', 's')", "result": " subject string " },
+      { "expression": "trim_right(' subject string ', 'su')", "result": " subject string " },
+      { "expression": "trim_right(' subject string ', 'su ')", "result": " subject string" },
+      { "expression": "trim_right(' subject string ', 'gsu ')", "result": " subject strin" }
+
+    ]
+  }
+]
