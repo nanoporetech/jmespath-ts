@@ -226,11 +226,11 @@ export class TreeInterpreter {
       case Token.TOK_ROOT:
         return this._rootValue;
       case 'Function':
-        const resolvedArgs: JSONValue[] = [];
+        const resolvedArgs: (JSONValue | ExpressionNode)[] = [];
         for (let j = 0; j < (node as ExpressionNode).children.length; j += 1) {
           resolvedArgs.push(this.visit((node as ExpressionNode).children[j], value) as JSONValue);
         }
-        return this.runtime.callFunction((node as FieldNode).name as string, resolvedArgs) as JSONValue;
+        return this.runtime.callFunction((node as FieldNode).name as string, resolvedArgs);
       case 'ExpressionReference':
         const refNode = (node as ExpressionNode).children[0] as ExpressionNode;
         refNode.jmespathType = Token.TOK_EXPREF;

@@ -27,7 +27,8 @@ export interface InputSignature {
 export type RuntimeFunction<T, U> = (resolvedArgs: T) => U;
 
 export interface FunctionSignature {
-  _func: RuntimeFunction<any, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _func: RuntimeFunction<any, JSONValue>;
   _signature: InputSignature[];
 }
 
@@ -54,7 +55,11 @@ export class Runtime {
     this._interpreter = interpreter;
   }
 
-  registerFunction(name: string, customFunction: RuntimeFunction<any, any>, signature: InputSignature[]): void {
+  registerFunction(
+    name: string,
+    customFunction: RuntimeFunction<(JSONValue | ExpressionNode)[], JSONValue>,
+    signature: InputSignature[],
+  ): void {
     if (name in this.functionTable) {
       throw new Error(`Function already defined: ${name}()`);
     }
@@ -64,7 +69,7 @@ export class Runtime {
     };
   }
 
-  callFunction(name: string, resolvedArgs: any): unknown {
+  callFunction(name: string, resolvedArgs: (JSONValue | ExpressionNode)[]): JSONValue {
     const functionEntry = this.functionTable[name];
     if (functionEntry === undefined) {
       throw new Error(`Unknown function: ${name}()`);
@@ -81,7 +86,7 @@ export class Runtime {
     }
   }
 
-  private validateArgs(name: string, args: any[], signature: InputSignature[]): void {
+  private validateArgs(name: string, args: (JSONValue | ExpressionNode)[], signature: InputSignature[]): void {
     let pluralized: boolean;
     this.validateInputSignatures(name, signature);
     const numberOfRequiredArgs = signature.filter(argSignature => !argSignature.optional ?? false).length;
@@ -130,7 +135,7 @@ export class Runtime {
     }
   }
 
-  private typeMatches(actual: InputArgument, expected: InputArgument, argValue: any[]): boolean {
+  private typeMatches(actual: InputArgument, expected: InputArgument, argValue: unknown): boolean {
     if (expected === InputArgument.TYPE_ANY) {
       return true;
     }
@@ -149,9 +154,10 @@ export class Runtime {
         } else if (expected === InputArgument.TYPE_ARRAY_STRING) {
           subtype = InputArgument.TYPE_STRING;
         }
-        for (let i = 0; i < argValue.length; i += 1) {
-          const typeName = this.getTypeName(argValue[i]);
-          if (typeName !== undefined && subtype !== undefined && !this.typeMatches(typeName, subtype, argValue[i])) {
+        const array = <JSONValue[]>argValue;
+        for (let i = 0; i < array.length; i += 1) {
+          const typeName = this.getTypeName(array[i]);
+          if (typeName !== undefined && subtype !== undefined && !this.typeMatches(typeName, subtype, array[i])) {
             return false;
           }
         }
@@ -162,7 +168,7 @@ export class Runtime {
     }
     return false;
   }
-  private getTypeName(obj: JSONValue): InputArgument | undefined {
+  private getTypeName(obj: JSONValue | ExpressionNode): InputArgument | undefined {
     switch (Object.prototype.toString.call(obj)) {
       case '[object String]':
         return InputArgument.TYPE_STRING;
@@ -210,7 +216,7 @@ export class Runtime {
     return Math.abs(inputValue);
   };
 
-  private functionAvg: RuntimeFunction<number[][], number> = ([inputArray]) => {
+  private functionAvg: RuntimeFunction<[number[]], number> = ([inputArray]) => {
     let sum = 0;
     for (let i = 0; i < inputArray.length; i += 1) {
       sum += inputArray[i];
@@ -222,9 +228,23 @@ export class Runtime {
     return Math.ceil(inputValue);
   };
 
-  private functionContains: RuntimeFunction<[string | any[], any], boolean> = resolvedArgs => {
-    const [searchable, searchValue] = resolvedArgs;
-    return searchable.includes(searchValue);
+  private functionContains: RuntimeFunction<[string[] | JSONArray, JSONValue], JSONValue> = ([
+    searchable,
+    searchValue,
+  ]) => {
+    if (Array.isArray(searchable)) {
+      const array = <JSONArray>searchable;
+      return array.includes(searchValue);
+    }
+
+    if (typeof searchable === 'string') {
+      const text = <string>searchable;
+      if (typeof searchValue === 'string') {
+        return text.includes(searchValue);
+      }
+    }
+
+    return null;
   };
 
   private functionEndsWith: RuntimeFunction<[string, string], boolean> = resolvedArgs => {
@@ -252,16 +272,14 @@ export class Runtime {
     return Object.keys(inputValue).length;
   };
 
-  private functionMap = (resolvedArgs: any[]): any[] => {
+  private functionMap: RuntimeFunction<[ExpressionNode, JSONArray], JSONArray> = ([exprefNode, elements]) => {
     if (!this._interpreter) {
       return [];
     }
     const mapped = [];
     const interpreter = this._interpreter;
-    const exprefNode = resolvedArgs[0];
-    const elements = resolvedArgs[1];
     for (let i = 0; i < elements.length; i += 1) {
-      mapped.push(interpreter.visit(exprefNode, elements[i]));
+      mapped.push(<JSONValue>interpreter.visit(exprefNode, elements[i]));
     }
     return mapped;
   };
@@ -286,7 +304,7 @@ export class Runtime {
     return maxElement;
   };
 
-  private functionMaxBy = (resolvedArgs: [JSONValue[], ExpressionNode]): JSONValue => {
+  private functionMaxBy: RuntimeFunction<[number[] | string[], ExpressionNode], JSONValue> = resolvedArgs => {
     const exprefNode = resolvedArgs[1];
     const resolvedArray = resolvedArgs[0];
     const keyFunction = this.createKeyFunction(exprefNode, [InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING]);
@@ -308,9 +326,6 @@ export class Runtime {
     for (let i = 0; i < resolvedArgs.length; i += 1) {
       const current = resolvedArgs[i];
       merged = Object.assign(merged, current);
-      // for (const key in current) {
-      //   merged[key] = current[key];
-      // }
     }
     return merged;
   };
@@ -335,7 +350,7 @@ export class Runtime {
     return minElement;
   };
 
-  private functionMinBy = (resolvedArgs: [JSONValue[], ExpressionNode]): JSONValue => {
+  private functionMinBy: RuntimeFunction<[number[] | string[], ExpressionNode], JSONValue> = resolvedArgs => {
     const exprefNode = resolvedArgs[1];
     const resolvedArray = resolvedArgs[0];
     const keyFunction = this.createKeyFunction(exprefNode, [InputArgument.TYPE_NUMBER, InputArgument.TYPE_STRING]);
@@ -352,7 +367,7 @@ export class Runtime {
     return minRecord;
   };
 
-  private functionNotNull = (resolvedArgs: any[]): JSONValue => {
+  private functionNotNull: RuntimeFunction<JSONArray, JSONValue> = resolvedArgs => {
     for (let i = 0; i < resolvedArgs.length; i += 1) {
       if (this.getTypeName(resolvedArgs[i]) !== InputArgument.TYPE_NULL) {
         return resolvedArgs[i];
@@ -361,7 +376,7 @@ export class Runtime {
     return null;
   };
 
-  private functionReverse: RuntimeFunction<[string | JSONArray[]], string | JSONArray> = ([inputValue]) => {
+  private functionReverse: RuntimeFunction<[string | JSONArray], string | JSONArray> = ([inputValue]) => {
     const typeName = this.getTypeName(inputValue);
     if (typeName === InputArgument.TYPE_STRING) {
       const originalStr = inputValue as string;
@@ -380,7 +395,7 @@ export class Runtime {
     return [...inputValue].sort();
   };
 
-  private functionSortBy = (resolvedArgs: [number[] | string[], ExpressionNode]): number[] | string[] => {
+  private functionSortBy: RuntimeFunction<[number[] | string[], ExpressionNode], JSONValue> = resolvedArgs => {
     if (!this._interpreter) {
       return [];
     }
@@ -462,7 +477,7 @@ export class Runtime {
     return JSON.stringify(inputValue);
   };
 
-  private functionType: RuntimeFunction<[JSONValue], string | undefined> = ([inputValue]) => {
+  private functionType: RuntimeFunction<[JSONValue], string> = ([inputValue]) => {
     switch (this.getTypeName(inputValue)) {
       case InputArgument.TYPE_NUMBER:
         return 'number';
@@ -474,12 +489,10 @@ export class Runtime {
         return 'object';
       case InputArgument.TYPE_BOOLEAN:
         return 'boolean';
-      case InputArgument.TYPE_EXPREF:
-        return 'expref';
       case InputArgument.TYPE_NULL:
         return 'null';
       default:
-        return;
+        throw new Error('invalid-type');
     }
   };
 

@@ -5,3 +5,5 @@ fixtures
 shared-fixtures
 coverage
 __snapshots__
+
+src/**/*.js
