@@ -107,7 +107,7 @@ describe('parsing', () => {
   it('should fail on invalid slices', () => {
     try {
       compile('bar[1:1:0]');
-      fail('invalid slice expression was successfully parsed');
+      fail('Invalid slice expression was successfully parsed');
     } catch (e) {
       expect(e.message).toContain('Invalid slice');
     }

@@ -19,12 +19,18 @@ export class TreeInterpreter {
   visit(node: ExpressionNode, value: JSONValue | ExpressionNode): JSONValue | ExpressionNode | ExpressionReference {
     switch (node.type) {
       case 'Field':
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        if (value === null || typeof value !== 'object' || typeof value !== 'object' || Array.isArray(value)) {
           return null;
         }
-        return value[node.name] ?? null;
-      case 'IndexExpression':
+        return (value as JSONObject)[node.name] ?? null;
       case 'Subexpression':
+        const { left, right } = node;
+        const base = this.visit(left, value);
+        if (base === null) {
+          return null;
+        }
+        return this.visit(right, base);
+      case 'IndexExpression':
         return this.visit(node.right, this.visit(node.left, value));
       case 'Index': {
         if (!Array.isArray(value)) {
@@ -38,7 +44,7 @@ export class TreeInterpreter {
           return null;
         }
         const { start, stop, step } = this.computeSliceParams(value.length, node);
-        const result = [];
+        const result: JSONValue[] = [];
 
         if (step > 0) {
           for (let i = start; i < stop; i += step) {
@@ -129,9 +135,6 @@ export class TreeInterpreter {
       case 'Root':
         return this._rootValue;
       case 'MultiSelectList': {
-        if (value === null) {
-          return null;
-        }
         const collected: JSONArray = [];
         for (const child of node.children) {
           collected.push(this.visit(child, value) as JSONValue);
@@ -139,9 +142,6 @@ export class TreeInterpreter {
         return collected;
       }
       case 'MultiSelectHash': {
-        if (value === null) {
-          return null;
-        }
         const collected: JSONObject = {};
         for (const child of node.children) {
           collected[child.name] = this.visit(child.value, value) as JSONValue;

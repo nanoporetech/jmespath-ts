@@ -1,4 +1,4 @@
-import { JSONValue } from './JSON.type';
+import type { JSONValue } from './JSON.type';
 
 export enum Token {
   TOK_EOF = 'EOF',

@@ -1,16 +1,15 @@
 {
   "name": "@metrichor/jmespath",
   "description": "Typescript implementation of the JMESPath spec (100% compliant)",
-  "version": "0.3.4",
+  "version": "1.0.0",
   "author": {
     "name": "Oxford Nanopore Technologies",
     "email": "support@nanoporetech.com",
     "url": "https://nanoporetech.com"
   },
-  "main": "dist/jmespath.umd.js",
-  "module": "dist/jmespath.esm.js",
-  "typings": "dist/types/index.d.ts",
-  "types": "dist/types/index.d.ts",
+  "main": "cjs/index.js",
+  "module": "mjs/index.mjs",
+  "types": "mjs/index.d.ts",
   "files": [
     "dist"
   ],
@@ -34,18 +33,19 @@
   },
   "license": "MPL-2.0",
   "engines": {
-    "node": ">=10.0.0"
+    "node": ">=14.0.0"
   },
   "scripts": {
     "lint": "eslint --ignore-path .eslintignore './{src,test}/**/*.{js,ts}'",
     "lint:fix": "npm run lint -- --fix",
     "prebuild": "rimraf dist",
     "perf": "node scripts/perf.js",
-    "build": "tsc --outDir dist/lib -d --module commonjs && rollup -c rollup.config.ts",
-    "start": "rollup -c rollup.config.ts -w",
+    "build": "rollup -c --configPlugin typescript && cp ./package.json ./dist/package.json && cp ./README.md ./dist/README.md && cp ./LICENSE ./dist/LICENSE",
+    "start": "rollup -c -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:prod": "npm run lint && npm run test -- --no-cache",
+    "typecheck": "tsc --noEmit --watch",
     "deploy-docs": "ts-node scripts/gh-pages-publish",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged"
@@ -73,9 +73,11 @@
     "rimraf": "^4.4.0",
     "rollup": "^3.19.1",
     "rollup-plugin-sourcemaps": "^0.6.3",
+    "rollup-plugin-typescript2": "^0.34.1",
     "shelljs": "^0.8.5",
     "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
+    "ts-runtime-typecheck": "^2.6.0",
     "typescript": "^4.9.5"
   }
 }

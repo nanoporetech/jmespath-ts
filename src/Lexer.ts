@@ -1,4 +1,4 @@
-import { JSONValue } from './JSON.type';
+import type { JSONValue } from './JSON.type';
 import { LexerToken, Token } from './Lexer.type';
 import { isAlpha, isNum, isAlphaNum } from './utils/index';
 

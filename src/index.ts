@@ -1,10 +1,10 @@
-import {Parser} from './Parser';
-import {Lexer} from './Lexer';
-import {TreeInterpreterInstance} from './TreeInterpreter';
+import { Parser } from './Parser';
+import { Lexer } from './Lexer';
+import { TreeInterpreterInstance } from './TreeInterpreter';
 import { InputArgument, RuntimeFunction, InputSignature } from './Runtime';
-import { JSONValue } from './JSON.type';
-import { LexerToken } from './Lexer.type';
-import { ExpressionNode } from './AST.type';
+import type { JSONValue } from './JSON.type';
+import type { LexerToken } from './Lexer.type';
+import type { ExpressionNode } from './AST.type';
 
 export type { FunctionSignature, RuntimeFunction, InputSignature } from './Runtime';
 
@@ -60,5 +60,3 @@ export const jmespath = {
   TYPE_OBJECT,
   TYPE_STRING,
 };
-
-export default jmespath;

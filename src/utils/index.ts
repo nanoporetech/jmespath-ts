@@ -55,15 +55,12 @@ export const isFalse = (obj: unknown): boolean => {
 };
 
 export const isAlpha = (ch: string): boolean => {
-  // tslint:disable-next-line: strict-comparisons
   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_';
 };
 
 export const isNum = (ch: string): boolean => {
-  // tslint:disable-next-line: strict-comparisons
   return (ch >= '0' && ch <= '9') || ch === '-';
 };
 export const isAlphaNum = (ch: string): boolean => {
-  // tslint:disable-next-line: strict-comparisons
   return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch === '_';
 };

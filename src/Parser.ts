@@ -317,6 +317,14 @@ class TokenParser {
     this.match(Token.TOK_RBRACKET);
 
     const [start = null, stop = null, step = null] = parts;
+    /**
+     * https://jmespath.org/specification.html#slices
+     * According to the spec, "if the given step is 0, an error MUST be raised."
+     * It's unclear if this is at parsing or interpreting.
+     */
+    if (step === 0) {
+      throw new Error('Invalid slice, step cannot be 0');
+    }
 
     return { type: 'Slice', start, stop, step };
   }
@@ -384,7 +392,6 @@ class TokenParser {
     let keyToken;
     let keyName: string;
     let value: ExpressionNode;
-    // tslint:disable-next-line: prettier
     for (;;) {
       keyToken = this.lookaheadToken(0);
       if (!identifierTypes.includes(keyToken.type)) {

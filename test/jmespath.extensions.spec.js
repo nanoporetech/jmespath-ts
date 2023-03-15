@@ -1,4 +1,4 @@
-import jmespath, { search, registerFunction } from '../src';
+import { search, registerFunction, TYPE_NUMBER, TYPE_ANY } from '../src';
 
 describe('registerFunction', () => {
   it('register a customFunction', () => {
@@ -11,13 +11,13 @@ describe('registerFunction', () => {
         'divide(foo, bar)',
       ),
     ).toThrow('Unknown function: divide()');
-    jmespath.registerFunction(
+    registerFunction(
       'divide',
       resolvedArgs => {
         const [dividend, divisor] = resolvedArgs;
         return dividend / divisor;
       },
-      [{ types: [jmespath.TYPE_NUMBER] }, { types: [jmespath.TYPE_NUMBER] }],
+      [{ types: [TYPE_NUMBER] }, { types: [TYPE_NUMBER] }],
     );
     expect(() =>
       search(
@@ -55,7 +55,7 @@ describe('registerFunction', () => {
       () => {
         /* EMPTY FUNCTION */
       },
-      [{ types: [jmespath.TYPE_ANY] }, { types: [jmespath.TYPE_NUMBER], optional: true }],
+      [{ types: [TYPE_ANY] }, { types: [TYPE_NUMBER], optional: true }],
     );
     expect(() =>
       search(
@@ -110,7 +110,7 @@ describe('registerFunction', () => {
       () => {
         /* EMPTY FUNCTION */
       },
-      [{ types: [jmespath.TYPE_ANY], optional: true, variadic: true }],
+      [{ types: [TYPE_ANY], optional: true, variadic: true }],
     );
     expect(() =>
       search(
@@ -130,8 +130,8 @@ describe('registerFunction', () => {
         /* EMPTY FUNCTION */
       },
       [
-        { types: [jmespath.TYPE_ANY], variadic: true },
-        { types: [jmespath.TYPE_ANY], optional: true },
+        { types: [TYPE_ANY], variadic: true },
+        { types: [TYPE_ANY], optional: true },
       ],
     );
     expect(() =>
@@ -151,7 +151,7 @@ describe('registerFunction', () => {
       ([first, second, third]) => {
         return { first, second: second ?? 'default[2]', third: third ?? 'default[3]' };
       },
-      [{ types: [jmespath.TYPE_ANY] }, { types: [jmespath.TYPE_ANY], optional: true }],
+      [{ types: [TYPE_ANY] }, { types: [TYPE_ANY], optional: true }],
     );
     expect(
       search(
