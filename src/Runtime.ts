@@ -1,6 +1,6 @@
 import type { TreeInterpreter } from './TreeInterpreter';
 import type { ExpressionNode } from './Lexer';
-import type { JSONValue, JSONObject, JSONArray, ObjectDict } from '.';
+import type { JSONValue, JSONObject, JSONArray, ObjectDict, JSONArrayKeyValuePairs, JSONArrayArray } from '.';
 import { Token } from './Lexer';
 
 import { isObject } from './utils';
@@ -16,6 +16,7 @@ export enum InputArgument {
   TYPE_NULL = 7,
   TYPE_ARRAY_NUMBER = 8,
   TYPE_ARRAY_STRING = 9,
+  TYPE_ARRAY_ARRAY = 10,
 }
 
 export interface InputSignature {
@@ -48,6 +49,7 @@ export class Runtime {
     [InputArgument.TYPE_NULL]: 'null',
     [InputArgument.TYPE_ARRAY_NUMBER]: 'Array<number>',
     [InputArgument.TYPE_ARRAY_STRING]: 'Array<string>',
+    [InputArgument.TYPE_ARRAY_ARRAY]: 'Array<Array<any>>',
   };
 
   constructor(interpreter: TreeInterpreter) {
@@ -137,6 +139,7 @@ export class Runtime {
     if (
       expected === InputArgument.TYPE_ARRAY_STRING ||
       expected === InputArgument.TYPE_ARRAY_NUMBER ||
+      expected === InputArgument.TYPE_ARRAY_ARRAY ||
       expected === InputArgument.TYPE_ARRAY
     ) {
       if (expected === InputArgument.TYPE_ARRAY) {
@@ -148,6 +151,8 @@ export class Runtime {
           subtype = InputArgument.TYPE_NUMBER;
         } else if (expected === InputArgument.TYPE_ARRAY_STRING) {
           subtype = InputArgument.TYPE_STRING;
+        } else if (expected === InputArgument.TYPE_ARRAY_ARRAY) {
+          subtype = InputArgument.TYPE_ARRAY;
         }
         for (let i = 0; i < argValue.length; i += 1) {
           const typeName = this.getTypeName(argValue[i]);
@@ -234,6 +239,19 @@ export class Runtime {
 
   private functionFloor: RuntimeFunction<[number], number> = ([inputValue]) => {
     return Math.floor(inputValue);
+  };
+
+  private functionFromItems: RuntimeFunction<[JSONArrayKeyValuePairs], JSONObject> = ([array]) => {
+    array.map((pair: [string, JSONValue]) => {
+      if (pair.length != 2 || typeof pair[0] !== 'string') {
+        throw new Error('invalid value, each array must contain two elements, a pair of string and value');
+      }
+    });
+    return Object.fromEntries(array);
+  };
+
+  private functionItems: RuntimeFunction<[JSONObject], JSONArray> = ([inputValue]) => {
+    return Object.entries(inputValue);
   };
 
   private functionJoin: RuntimeFunction<[string, string[]], string> = resolvedArgs => {
@@ -487,6 +505,14 @@ export class Runtime {
     return Object.values(inputObject);
   };
 
+  private functionZip: RuntimeFunction<JSONArrayArray, JSONArray> = array => {
+    const length = Math.min(...array.map(arr => arr.length));
+    const result = Array(length)
+      .fill(null)
+      .map((_, index) => array.map(arr => arr[index]));
+    return result;
+  };
+
   private functionTable: FunctionTable = {
     abs: {
       _func: this.functionAbs,
@@ -539,6 +565,22 @@ export class Runtime {
       _signature: [
         {
           types: [InputArgument.TYPE_NUMBER],
+        },
+      ],
+    },
+    from_items: {
+      _func: this.functionFromItems,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY_ARRAY],
+        },
+      ],
+    },
+    items: {
+      _func: this.functionItems,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_OBJECT],
         },
       ],
     },
@@ -719,6 +761,15 @@ export class Runtime {
       _signature: [
         {
           types: [InputArgument.TYPE_OBJECT],
+        },
+      ],
+    },
+    zip: {
+      _func: this.functionZip,
+      _signature: [
+        {
+          types: [InputArgument.TYPE_ARRAY],
+          variadic: true,
         },
       ],
     },
