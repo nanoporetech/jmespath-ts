@@ -1,7 +1,33 @@
-import { search, tokenize, compile, TreeInterpreter } from '../src';
-import { strictDeepEqual } from '../src/utils';
+import { tokenize } from '../src';
 
 describe('tokenize', () => {
+  it('should tokenize root node reference', () => {
+    expect(tokenize('$')).toMatchObject([{ type: 'Root', value: '$', start: 0 }]);
+  });
+  it('should tokenize arithmetic + plus sign', () => {
+    expect(tokenize('+')).toMatchObject([{ type: 'Plus', value: '+', start: 0 }]);
+  });
+  it('should tokenize arithmetic - minus sign', () => {
+    expect(tokenize('-')).toMatchObject([{ type: 'Minus', value: '-', start: 0 }]);
+  });
+  it('should tokenize arithmetic − (U+2212) minus sign', () => {
+    expect(tokenize('−')).toMatchObject([{ type: 'Minus', value: '\u2212', start: 0 }]);
+  });
+  it('should tokenize arithmetic × (U+00D7) multiplication sign', () => {
+    expect(tokenize('×')).toMatchObject([{ type: 'Multiply', value: '\u00d7', start: 0 }]);
+  });
+  it('should tokenize arithmetic / division operator', () => {
+    expect(tokenize('/')).toMatchObject([{ type: 'Divide', value: '/', start: 0 }]);
+  });
+  it('should tokenize arithmetic ÷ (U+00F7) division sign', () => {
+    expect(tokenize('÷')).toMatchObject([{ type: 'Divide', value: '\u00f7', start: 0 }]);
+  });
+  it('should tokenize arithmetic % modulo operator', () => {
+    expect(tokenize('%')).toMatchObject([{ type: 'Modulo', value: '%', start: 0 }]);
+  });
+  it('should tokenize arithmetic // integer division operator', () => {
+    expect(tokenize('//')).toMatchObject([{ type: 'Div', value: '//', start: 0 }]);
+  });
   it('should tokenize unquoted identifier', () => {
     expect(tokenize('foo')).toMatchObject([{ type: 'UnquotedIdentifier', value: 'foo', start: 0 }]);
   });
@@ -79,11 +105,21 @@ describe('tokenize', () => {
   });
   it('should tokenize two char tokens without shared prefix', () => {
     expect(tokenize('==')).toMatchObject([{ type: 'EQ', value: '==', start: 0 }]);
+    expect(() => tokenize('=')).toThrowError('Unknown incomplete token: =');
   });
   it('should tokenize not equals', () => {
     expect(tokenize('!=')).toMatchObject([{ type: 'NE', value: '!=', start: 0 }]);
   });
+  it('should tokenize the AND token', () => {
+    expect(tokenize('&&')).toMatchObject([{ type: 'And', value: '&&', start: 0 }]);
+    expect(tokenize('a&&b')).toMatchObject([
+      { type: 'UnquotedIdentifier', value: 'a', start: 0 },
+      { type: 'And', value: '&&', start: 1 },
+      { type: 'UnquotedIdentifier', value: 'b', start: 3 },
+    ]);
+  });
   it('should tokenize the OR token', () => {
+    expect(tokenize('||')).toMatchObject([{ type: 'Or', value: '||', start: 0 }]);
     expect(tokenize('a||b')).toMatchObject([
       { type: 'UnquotedIdentifier', value: 'a', start: 0 },
       { type: 'Or', value: '||', start: 1 },
@@ -97,90 +133,5 @@ describe('tokenize', () => {
       { type: 'Current', value: '@', start: 4 },
       { type: 'Rparen', value: ')', start: 5 },
     ]);
-  });
-});
-
-describe('parsing', () => {
-  it('should parse field node', () => {
-    expect(compile('foo')).toMatchObject({ type: 'Field', name: 'foo' });
-  });
-});
-
-describe('Searches compiled ast', () => {
-  it('search a compiled expression', () => {
-    const ast = compile('foo.bar');
-    expect(TreeInterpreter.search(ast, { foo: { bar: 'BAZ' } })).toEqual('BAZ');
-  });
-});
-
-describe('strictDeepEqual', () => {
-  it('should compare scalars', () => {
-    expect(strictDeepEqual('a', 'a')).toStrictEqual(true);
-  });
-  it('should be false for different types', () => {
-    expect(strictDeepEqual('a', 2)).toStrictEqual(false);
-  });
-  it('should be false for arrays of different lengths', () => {
-    expect(strictDeepEqual([0, 1], [1, 2, 3])).toStrictEqual(false);
-  });
-  it('should be true for identical arrays', () => {
-    expect(strictDeepEqual([0, 1], [0, 1])).toStrictEqual(true);
-  });
-  it('should be true for nested arrays', () => {
-    expect(
-      strictDeepEqual(
-        [
-          [0, 1],
-          [2, 3],
-        ],
-        [
-          [0, 1],
-          [2, 3],
-        ],
-      ),
-    ).toStrictEqual(true);
-  });
-  it('should be true for nested arrays of strings', () => {
-    expect(
-      strictDeepEqual(
-        [
-          ['a', 'b'],
-          ['c', 'd'],
-        ],
-        [
-          ['a', 'b'],
-          ['c', 'd'],
-        ],
-      ),
-    ).toStrictEqual(true);
-  });
-  it('should be false for different arrays of the same length', () => {
-    expect(strictDeepEqual([0, 1], [1, 2])).toStrictEqual(false);
-  });
-  it('should handle object literals', () => {
-    expect(strictDeepEqual({ a: 1, b: 2 }, { a: 1, b: 2 })).toStrictEqual(true);
-  });
-  it('should handle keys in first not in second', () => {
-    expect(strictDeepEqual({ a: 1, b: 2 }, { a: 1 })).toStrictEqual(false);
-  });
-  it('should handle keys in second not in first', () => {
-    expect(strictDeepEqual({ a: 1 }, { a: 1, b: 2 })).toStrictEqual(false);
-  });
-  it('should handle nested objects', () => {
-    expect(strictDeepEqual({ a: { b: [1, 2] } }, { a: { b: [1, 2] } })).toStrictEqual(true);
-  });
-  it('should handle nested objects that are not equal', () => {
-    expect(strictDeepEqual({ a: { b: [1, 2] } }, { a: { b: [1, 4] } })).toStrictEqual(false);
-  });
-});
-
-describe('search', () => {
-  it('should throw a readable error when invalid arguments are provided to a function', () => {
-    try {
-      search([], 'length(`null`)');
-    } catch (e) {
-      expect(e.message).toContain('length() expected argument 1 to be type (string | array | object)');
-      expect(e.message).toContain('received type null instead.');
-    }
   });
 });

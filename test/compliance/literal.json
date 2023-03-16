@@ -207,6 +207,16 @@
         "comment": "Can escape the single quote",
         "expression": "'foo\\'bar'",
         "result": "foo'bar"
+      },
+      {
+        "comment": "Can escape backslash",
+        "expression": "'\\\\'",
+        "result": "\\"
+      },
+      {
+        "comment": "Backslash not followed by single quote is treated as any other character",
+        "expression": "'\\z'",
+        "result": "\\z"
       }
     ]
   }

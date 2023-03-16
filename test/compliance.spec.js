@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* eslint-disable @typescript-eslint/no-var-requires */
 import { readdirSync, statSync, readFileSync } from 'fs';
 import { basename } from 'path';
 import { search } from '../src';

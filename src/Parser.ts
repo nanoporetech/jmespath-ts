@@ -1,14 +1,18 @@
-import {
-  ComparitorNode,
+import type {
+  BinaryArithmeticNode,
+  BinaryExpressionNode,
+  ComparatorNode,
+  ComparatorType,
   ExpressionNode,
-  ExpressionNodeTree,
-  FieldNode,
+  FunctionNode,
+  IndexNode,
   KeyValuePairNode,
-  LexerToken,
-  ValueNode,
-  ASTNode,
-} from './Lexer';
-import Lexer, { Token } from './Lexer';
+  BinaryOperatorType,
+  SliceNode,
+  UnaryExpressionNode,
+} from './AST.type';
+import { Lexer } from './Lexer';
+import { LexerToken, Token } from './Lexer.type';
 
 const bindingPower: Record<string, number> = {
   [Token.TOK_EOF]: 0,
@@ -31,6 +35,12 @@ const bindingPower: Record<string, number> = {
   [Token.TOK_GTE]: 5,
   [Token.TOK_LTE]: 5,
   [Token.TOK_NE]: 5,
+  [Token.TOK_MINUS]: 6,
+  [Token.TOK_PLUS]: 6,
+  [Token.TOK_DIV]: 7,
+  [Token.TOK_DIVIDE]: 7,
+  [Token.TOK_MODULO]: 7,
+  [Token.TOK_MULTIPLY]: 7,
   [Token.TOK_FLATTEN]: 9,
   [Token.TOK_STAR]: 20,
   [Token.TOK_FILTER]: 21,
@@ -44,7 +54,7 @@ const bindingPower: Record<string, number> = {
 class TokenParser {
   index = 0;
   tokens: LexerToken[] = [];
-  parse(expression: string): ASTNode {
+  parse(expression: string): ExpressionNode {
     this.loadTokens(expression);
     this.index = 0;
     const ast = this.expression(0);
@@ -59,7 +69,7 @@ class TokenParser {
     this.tokens = [...Lexer.tokenize(expression), { type: Token.TOK_EOF, value: '', start: expression.length }];
   }
 
-  expression(rbp: number): ASTNode {
+  expression(rbp: number): ExpressionNode {
     const leftToken = this.lookaheadToken(0);
     this.advance();
     let left = this.nud(leftToken);
@@ -84,66 +94,76 @@ class TokenParser {
     this.index += 1;
   }
 
-  nud(token: LexerToken): ASTNode {
-    let left;
-    let right;
-    let expression;
+  nud(token: LexerToken): ExpressionNode {
     switch (token.type) {
       case Token.TOK_LITERAL:
-        return { type: 'Literal', value: token.value } as ValueNode;
+        return { type: 'Literal', value: token.value };
       case Token.TOK_UNQUOTEDIDENTIFIER:
-        return { type: 'Field', name: token.value } as FieldNode;
+        return { type: 'Field', name: token.value as string };
       case Token.TOK_QUOTEDIDENTIFIER:
-        const node: FieldNode = { type: 'Field', name: token.value };
         if (this.lookahead(0) === Token.TOK_LPAREN) {
           throw new Error('Quoted identifier not allowed for function names.');
         } else {
-          return node;
+          return { type: 'Field', name: token.value as string };
         }
-      case Token.TOK_NOT:
-        right = this.expression(bindingPower.Not);
-        return { type: 'NotExpression', children: [right] } as ExpressionNode;
-      case Token.TOK_STAR:
-        left = { type: 'Identity' };
-        right =
-          (this.lookahead(0) === Token.TOK_RBRACKET && { type: 'Identity' }) ||
-          this.parseProjectionRHS(bindingPower.Star);
-        return { type: 'ValueProjection', children: [left, right] } as ExpressionNode;
+      case Token.TOK_NOT: {
+        const child = this.expression(bindingPower.Not);
+        return { type: 'NotExpression', child };
+      }
+      case Token.TOK_MINUS: {
+        const child = this.expression(bindingPower.Minus);
+        return { type: 'Unary', operator: token.type, operand: child };
+      }
+      case Token.TOK_PLUS: {
+        const child = this.expression(bindingPower.Plus);
+        return { type: 'Unary', operator: token.type, operand: child };
+      }
+      case Token.TOK_STAR: {
+        const left: ExpressionNode = { type: 'Identity' };
+        const right: ExpressionNode =
+          this.lookahead(0) === Token.TOK_RBRACKET ? left : this.parseProjectionRHS(bindingPower.Star);
+        return { type: 'ValueProjection', left, right };
+      }
       case Token.TOK_FILTER:
-        return this.led(token.type, { type: 'Identity' } as ASTNode);
+        return this.led(token.type, { type: 'Identity' });
       case Token.TOK_LBRACE:
         return this.parseMultiselectHash();
-      case Token.TOK_FLATTEN:
-        left = { type: Token.TOK_FLATTEN, children: [{ type: 'Identity' }] };
-        right = this.parseProjectionRHS(bindingPower.Flatten);
-        return { type: 'Projection', children: [left, right] } as ExpressionNode;
-      case Token.TOK_LBRACKET:
+      case Token.TOK_FLATTEN: {
+        const left: ExpressionNode = { type: 'Flatten', child: { type: 'Identity' } };
+        const right: ExpressionNode = this.parseProjectionRHS(bindingPower.Flatten);
+        return { type: 'Projection', left, right };
+      }
+      case Token.TOK_LBRACKET: {
         if (this.lookahead(0) === Token.TOK_NUMBER || this.lookahead(0) === Token.TOK_COLON) {
-          right = this.parseIndexExpression();
+          const right = this.parseIndexExpression();
           return this.projectIfSlice({ type: 'Identity' }, right);
         }
         if (this.lookahead(0) === Token.TOK_STAR && this.lookahead(1) === Token.TOK_RBRACKET) {
           this.advance();
           this.advance();
-          right = this.parseProjectionRHS(bindingPower.Star);
+          const right = this.parseProjectionRHS(bindingPower.Star);
           return {
-            children: [{ type: 'Identity' }, right],
+            left: { type: 'Identity' },
+            right,
             type: 'Projection',
-          } as ExpressionNode;
+          };
         }
         return this.parseMultiselectList();
+      }
       case Token.TOK_CURRENT:
         return { type: Token.TOK_CURRENT };
       case Token.TOK_ROOT:
         return { type: Token.TOK_ROOT };
-      case Token.TOK_EXPREF:
-        expression = this.expression(bindingPower.Expref);
-        return { type: 'ExpressionReference', children: [expression] } as ExpressionNode;
-      case Token.TOK_LPAREN:
-        const args: ASTNode[] = [];
+      case Token.TOK_EXPREF: {
+        const child = this.expression(bindingPower.Expref);
+        return { type: 'ExpressionReference', child };
+      }
+      case Token.TOK_LPAREN: {
+        const args: ExpressionNode[] = [];
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
+          let expression: ExpressionNode;
           if (this.lookahead(0) === Token.TOK_CURRENT) {
-            expression = { type: Token.TOK_CURRENT } as ASTNode;
+            expression = { type: Token.TOK_CURRENT };
             this.advance();
           } else {
             expression = this.expression(0);
@@ -152,37 +172,43 @@ class TokenParser {
         }
         this.match(Token.TOK_RPAREN);
         return args[0];
+      }
       default:
         this.errorToken(token);
     }
   }
 
-  led(tokenName: string, left: ExpressionNodeTree): ExpressionNode | ComparitorNode {
-    let right: ExpressionNodeTree;
+  led(tokenName: string, left: ExpressionNode): ExpressionNode {
     switch (tokenName) {
-      case Token.TOK_DOT:
+      case Token.TOK_DOT: {
         const rbp = bindingPower.Dot;
         if (this.lookahead(0) !== Token.TOK_STAR) {
-          right = this.parseDotRHS(rbp);
-          return { type: 'Subexpression', children: [left, right] };
+          const right = this.parseDotRHS(rbp);
+          return { type: 'Subexpression', left, right };
         }
         this.advance();
-        right = this.parseProjectionRHS(rbp);
-        return { type: 'ValueProjection', children: [left, right] };
-
-      case Token.TOK_PIPE:
-        right = this.expression(bindingPower.Pipe);
-        return { type: Token.TOK_PIPE, children: [left, right] };
-      case Token.TOK_OR:
-        right = this.expression(bindingPower.Or);
-        return { type: 'OrExpression', children: [left, right] };
-      case Token.TOK_AND:
-        right = this.expression(bindingPower.And);
-        return { type: 'AndExpression', children: [left, right] };
-      case Token.TOK_LPAREN:
-        const name = (left as FieldNode).name;
-        const args: ASTNode[] = [];
-        let expression: ASTNode;
+        const right = this.parseProjectionRHS(rbp);
+        return { type: 'ValueProjection', left, right };
+      }
+      case Token.TOK_PIPE: {
+        const right = this.expression(bindingPower.Pipe);
+        return { type: 'Pipe', left, right };
+      }
+      case Token.TOK_OR: {
+        const right = this.expression(bindingPower.Or);
+        return { type: 'OrExpression', left, right };
+      }
+      case Token.TOK_AND: {
+        const right = this.expression(bindingPower.And);
+        return { type: 'AndExpression', left, right };
+      }
+      case Token.TOK_LPAREN: {
+        if (left.type !== 'Field') {
+          throw new Error('Expected a Field node');
+        }
+        const name = left.name;
+        const args: ExpressionNode[] = [];
+        let expression: ExpressionNode;
         while (this.lookahead(0) !== Token.TOK_RPAREN) {
           if (this.lookahead(0) === Token.TOK_CURRENT) {
             expression = { type: Token.TOK_CURRENT };
@@ -196,19 +222,21 @@ class TokenParser {
           args.push(expression);
         }
         this.match(Token.TOK_RPAREN);
-        const node = { name, type: 'Function', children: args };
+        const node: FunctionNode = { name, type: 'Function', children: args };
         return node;
-      case Token.TOK_FILTER:
+      }
+      case Token.TOK_FILTER: {
         const condition = this.expression(0);
         this.match(Token.TOK_RBRACKET);
-        right =
-          (this.lookahead(0) === Token.TOK_FLATTEN && { type: 'Identity' }) ||
-          this.parseProjectionRHS(bindingPower.Filter);
-        return { type: 'FilterProjection', children: [left, right, condition] };
-      case Token.TOK_FLATTEN:
-        const leftNode = { type: Token.TOK_FLATTEN, children: [left] };
-        const rightNode = this.parseProjectionRHS(bindingPower.Flatten);
-        return { type: 'Projection', children: [leftNode, rightNode] };
+        const right: ExpressionNode =
+          this.lookahead(0) === Token.TOK_FLATTEN ? { type: 'Identity' } : this.parseProjectionRHS(bindingPower.Filter);
+        return { type: 'FilterProjection', left, right, condition };
+      }
+      case Token.TOK_FLATTEN: {
+        const leftNode: UnaryExpressionNode = { type: 'Flatten', child: left };
+        const right = this.parseProjectionRHS(bindingPower.Flatten);
+        return { type: 'Projection', left: leftNode, right };
+      }
       case Token.TOK_EQ:
       case Token.TOK_NE:
       case Token.TOK_GT:
@@ -216,16 +244,25 @@ class TokenParser {
       case Token.TOK_LT:
       case Token.TOK_LTE:
         return this.parseComparator(left, tokenName);
-      case Token.TOK_LBRACKET:
+      case Token.TOK_PLUS:
+      case Token.TOK_MINUS:
+      case Token.TOK_MULTIPLY:
+      case Token.TOK_STAR:
+      case Token.TOK_DIVIDE:
+      case Token.TOK_MODULO:
+      case Token.TOK_DIV:
+        return this.parseArithmetic(left, tokenName);
+      case Token.TOK_LBRACKET: {
         const token = this.lookaheadToken(0);
         if (token.type === Token.TOK_NUMBER || token.type === Token.TOK_COLON) {
-          right = this.parseIndexExpression();
+          const right = this.parseIndexExpression();
           return this.projectIfSlice(left, right);
         }
         this.match(Token.TOK_STAR);
         this.match(Token.TOK_RBRACKET);
-        right = this.parseProjectionRHS(bindingPower.Star);
-        return { type: 'Projection', children: [left, right] };
+        const right = this.parseProjectionRHS(bindingPower.Star);
+        return { type: 'Projection', left, right };
+      }
 
       default:
         return this.errorToken(this.lookaheadToken(0));
@@ -248,60 +285,85 @@ class TokenParser {
     throw error;
   }
 
-  private parseIndexExpression(): ValueNode | ExpressionNode<number | null> {
+  private parseIndexExpression(): SliceNode | IndexNode {
     if (this.lookahead(0) === Token.TOK_COLON || this.lookahead(1) === Token.TOK_COLON) {
       return this.parseSliceExpression();
     }
-    const node: ValueNode = {
-      type: 'Index',
-      value: this.lookaheadToken(0).value,
-    };
+    const value = Number(this.lookaheadToken(0).value);
     this.advance();
     this.match(Token.TOK_RBRACKET);
-    return node;
+    return { type: 'Index', value };
   }
 
-  private projectIfSlice(left: ASTNode, right: ASTNode): ExpressionNode {
-    const indexExpr: ExpressionNode = { type: 'IndexExpression', children: [left, right] };
+  private projectIfSlice(
+    left: ExpressionNode,
+    right: ExpressionNode,
+  ): BinaryExpressionNode<'Projection' | 'IndexExpression'> {
+    const indexExpr: BinaryExpressionNode<'IndexExpression'> = { type: 'IndexExpression', left, right };
     if (right.type === 'Slice') {
       return {
-        children: [indexExpr, this.parseProjectionRHS(bindingPower.Star)],
+        left: indexExpr,
+        right: this.parseProjectionRHS(bindingPower.Star),
         type: 'Projection',
       };
     }
     return indexExpr;
   }
 
-  private parseSliceExpression(): ExpressionNode<number | null> {
-    const parts: (number | null)[] = [null, null, null];
-    let index = 0;
-    let currentTokenType = this.lookahead(0);
-    while (currentTokenType !== Token.TOK_RBRACKET && index < 3) {
-      if (currentTokenType === Token.TOK_COLON) {
-        index += 1;
-        this.advance();
-      } else if (currentTokenType === Token.TOK_NUMBER) {
-        parts[index] = this.lookaheadToken(0).value as number;
-        this.advance();
-      } else {
-        const token = this.lookaheadToken(0);
-        this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
+  private parseSliceExpression(): SliceNode {
+    const parts = [];
+
+    for (let i = 0; i < 3; i += 1) {
+      let next = this.lookaheadToken(0);
+      if (next.type === Token.TOK_RBRACKET) {
+        break;
       }
-      currentTokenType = this.lookahead(0);
+      if (next.type === Token.TOK_NUMBER) {
+        this.advance();
+        parts.push(next.value as number);
+        next = this.lookaheadToken(0);
+      } else {
+        parts.push(null);
+      }
+
+      // COLON/RBRACKET
+      // WARN technically allows for trailing colon
+      if (next.type !== Token.TOK_COLON) {
+        if (next.type !== Token.TOK_RBRACKET) {
+          this.errorToken(next, `Syntax error, unexpected token: ${next.value}(${next.type})`);
+        }
+        break;
+      }
+
+      this.advance();
     }
+
     this.match(Token.TOK_RBRACKET);
-    return {
-      children: parts,
-      type: 'Slice',
-    };
+
+    const [start = null, stop = null, step = null] = parts;
+    /**
+     * https://jmespath.org/specification.html#slices
+     * According to the spec, "if the given step is 0, an error MUST be raised."
+     * It's unclear if this is at parsing or interpreting.
+     */
+    if (step === 0) {
+      throw new Error('Invalid slice, step cannot be 0');
+    }
+
+    return { type: 'Slice', start, stop, step };
   }
 
-  private parseComparator(left: ASTNode, comparator: Token): ComparitorNode {
+  private parseComparator(left: ExpressionNode, comparator: ComparatorType): ComparatorNode {
     const right = this.expression(bindingPower[comparator]);
-    return { type: 'Comparator', name: comparator, children: [left, right] };
+    return { type: 'Comparator', name: comparator, left, right };
   }
 
-  private parseDotRHS(rbp: number): ASTNode {
+  private parseArithmetic(left: ExpressionNode, operator: BinaryOperatorType): BinaryArithmeticNode {
+    const right = this.expression(bindingPower[operator]);
+    return { type: 'Arithmetic', operator: operator, left, right };
+  }
+
+  private parseDotRHS(rbp: number): ExpressionNode {
     const lookahead = this.lookahead(0);
     const exprTokens = [Token.TOK_UNQUOTEDIDENTIFIER, Token.TOK_QUOTEDIDENTIFIER, Token.TOK_STAR];
     if (exprTokens.includes(lookahead)) {
@@ -319,7 +381,7 @@ class TokenParser {
     this.errorToken(token, `Syntax error, unexpected token: ${token.value}(${token.type})`);
   }
 
-  private parseProjectionRHS(rbp: number): ASTNode {
+  private parseProjectionRHS(rbp: number): ExpressionNode {
     if (bindingPower[this.lookahead(0)] < 10) {
       return { type: 'Identity' };
     }
@@ -338,7 +400,7 @@ class TokenParser {
   }
 
   private parseMultiselectList(): ExpressionNode {
-    const expressions: ASTNode[] = [];
+    const expressions: ExpressionNode[] = [];
     while (this.lookahead(0) !== Token.TOK_RBRACKET) {
       const expression = this.expression(0);
       expressions.push(expression);
@@ -358,8 +420,7 @@ class TokenParser {
     const identifierTypes = [Token.TOK_UNQUOTEDIDENTIFIER, Token.TOK_QUOTEDIDENTIFIER];
     let keyToken;
     let keyName: string;
-    let value: ASTNode;
-    // tslint:disable-next-line: prettier
+    let value: ExpressionNode;
     for (;;) {
       keyToken = this.lookaheadToken(0);
       if (!identifierTypes.includes(keyToken.type)) {
@@ -382,4 +443,3 @@ class TokenParser {
 }
 
 export const Parser = new TokenParser();
-export default Parser;

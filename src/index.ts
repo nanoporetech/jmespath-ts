@@ -1,16 +1,12 @@
-import Parser from './Parser';
-import Lexer from './Lexer';
-import TreeInterpreterInst from './TreeInterpreter';
-import { ExpressionNodeTree, LexerToken } from './Lexer';
+import { Parser } from './Parser';
+import { Lexer } from './Lexer';
+import { TreeInterpreterInstance } from './TreeInterpreter';
 import { InputArgument, RuntimeFunction, InputSignature } from './Runtime';
+import type { JSONValue } from './JSON.type';
+import type { LexerToken } from './Lexer.type';
+import type { ExpressionNode } from './AST.type';
 
 export type { FunctionSignature, RuntimeFunction, InputSignature } from './Runtime';
-export type ObjectDict<T = unknown> = Record<string, T | undefined>;
-
-export type JSONPrimitive = string | number | boolean | null;
-export type JSONValue = JSONPrimitive | JSONObject | JSONArray;
-export type JSONObject = { [member: string]: JSONValue };
-export type JSONArray = JSONValue[];
 
 export const TYPE_ANY = InputArgument.TYPE_ANY;
 export const TYPE_ARRAY = InputArgument.TYPE_ARRAY;
@@ -23,7 +19,7 @@ export const TYPE_NUMBER = InputArgument.TYPE_NUMBER;
 export const TYPE_OBJECT = InputArgument.TYPE_OBJECT;
 export const TYPE_STRING = InputArgument.TYPE_STRING;
 
-export function compile(expression: string): ExpressionNodeTree {
+export function compile(expression: string): ExpressionNode {
   const nodeTree = Parser.parse(expression);
   return nodeTree;
 }
@@ -34,18 +30,19 @@ export function tokenize(expression: string): LexerToken[] {
 
 export const registerFunction = (
   functionName: string,
-  customFunction: RuntimeFunction<any, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  customFunction: RuntimeFunction<any[], JSONValue>,
   signature: InputSignature[],
 ): void => {
-  TreeInterpreterInst.runtime.registerFunction(functionName, customFunction, signature);
+  TreeInterpreterInstance.runtime.registerFunction(functionName, customFunction, signature);
 };
 
 export function search(data: JSONValue, expression: string): JSONValue {
   const nodeTree = Parser.parse(expression);
-  return TreeInterpreterInst.search(nodeTree, data);
+  return TreeInterpreterInstance.search(nodeTree, data);
 }
 
-export const TreeInterpreter = TreeInterpreterInst;
+export const TreeInterpreter = TreeInterpreterInstance;
 
 export const jmespath = {
   compile,
@@ -64,5 +61,3 @@ export const jmespath = {
   TYPE_OBJECT,
   TYPE_STRING,
 };
-
-export default jmespath;

@@ -1,42 +1,16 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "allowUnreachableCode": false,
-    "declaration": true,
-    "declarationDir": "dist/types",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "lib": [
-      "es2020",
-      "dom"
-    ],
-    "moduleResolution": "node",
-    "module": "esnext",
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "target": "es6",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "suppressImplicitAnyIndexErrors": true,
-    "typeRoots": [
-      "node_modules/@types"
-    ]
+    "allowJs": true
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "test"
-  ],
+  "extends": "./tsconfig.main.json",
   "include": [
-    "src"
+    "**/*.ts",
+    "**/*.js",
+    "rollup.config.mjs"
+  ],
+  "exclude": [
+    "./dist",
+    "./coverage",
+    "./node_modules"
   ]
 }
