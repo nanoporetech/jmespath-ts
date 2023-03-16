@@ -20,11 +20,16 @@ Update package dependencies to address vulnerabilities
 - [JEP-19] Pipe evaluation [@springcomp](https://github.com/springcomp)
 - `CHANGELOG.md`: Going to start tracking changes now that the JMESPath community is contributing
 
+### Fixed
+
+- Fix: Catch invalid slice expressions at compile time [@mkantor](https://github.com/mkantor)
+- Fix: Fix unsupported '\\' raw-string escape sequence [@springcomp](https://github.com/springcomp)
+
 ### Changed
 
 - Improvement: Refactor AST to improve types [@shortercode](https://github.com/shortercode)
-- Fix: Catch invalid slice expressions at compile time [@mkantor](https://github.com/mkantor)
 - Package dependency updates
 - Upgrade to typescript@4.9.5
+- Upgrade to rollup@3
+- Upgrade to deprecated coveralls package in favour of a new community version
 - Cleaned up old linting comments
-- 
